@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Discord RPC Settings</title>
+</head>
+<body>
+    <div data-role="page" class="type-interior pluginConfigurationPage" data-require="emby-button,emby-input" data-controller="__plugin/discordrpcjs">
+        <div data-role="content">
+            <div class="content-primary">
+                <form class="discordrpcConfigurationForm">
+                    <h2>Discord RPC Style</h2>
+                    <div class="inputContainer">
+                        <label>Details Template</label>
+                        <input is="emby-input" id="detailsTemplate" type="text" />
+                        <div class="fieldDescription">Tokens: {title}</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label>State Template</label>
+                        <input is="emby-input" id="stateTemplate" type="text" />
+                        <div class="fieldDescription">Tokens: {season_episode}, {progress_percent}, {play_state}</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label>Large Image Key</label>
+                        <input is="emby-input" id="largeImageKey" type="text" />
+                    </div>
+                    <div class="inputContainer">
+                        <label>Large Image Text Template</label>
+                        <input is="emby-input" id="largeImageTextTemplate" type="text" />
+                    </div>
+                    <div class="inputContainer">
+                        <label>Small Image Key</label>
+                        <input is="emby-input" id="smallImageKey" type="text" />
+                    </div>
+                    <div class="inputContainer">
+                        <label>Small Image Text Template</label>
+                        <input is="emby-input" id="smallImageTextTemplate" type="text" />
+                    </div>
+                    <div class="inputContainer">
+                        <label><input id="includeTimestamps" type="checkbox" /> Include timestamps</label>
+                    </div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

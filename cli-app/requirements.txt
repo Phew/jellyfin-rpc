@@ -1,0 +1,4 @@
+pypresence==4.3.0
+requests==2.32.3
+rich==13.7.1
+

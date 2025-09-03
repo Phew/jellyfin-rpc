@@ -1,0 +1,8 @@
+{
+  "jellyfin_url": "https://your.jellyfin",
+  "api_key": "YOUR_API_KEY",
+  "discord_client_id": "1199810830972170261",
+  "interval": 5
+}
+
+
