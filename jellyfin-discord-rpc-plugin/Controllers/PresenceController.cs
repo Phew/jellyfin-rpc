@@ -84,18 +84,49 @@ public class PresenceController : ControllerBase
             startTimestamp = start.ToUnixTimeSeconds();
         }
 
+        // Resolve cover image relative path for Primary if available
+        string? coverPath = null;
+        try
+        {
+            string? primaryTag = null;
+            if (item.ImageTags != null && item.ImageTags.ContainsKey(ImageType.Primary))
+            {
+                primaryTag = item.ImageTags[ImageType.Primary];
+            }
+            else if (!string.IsNullOrEmpty(item.PrimaryImageTag))
+            {
+                primaryTag = item.PrimaryImageTag;
+            }
+            if (!string.IsNullOrEmpty(primaryTag) && item.Id != Guid.Empty)
+            {
+                coverPath = $"Items/{item.Id}/Images/Primary?tag={primaryTag}";
+            }
+        }
+        catch { }
+
+        // Optionally compute large image asset key based on item id
+        var largeImageKey = config.LargeImageKey;
+        if (config.UseItemCoverAsLargeImage && item.Id != Guid.Empty)
+        {
+            var normalizedId = item.Id.ToString("N"); // no dashes
+            largeImageKey = config.AssetKeyPrefix + normalizedId;
+        }
+
         return Ok(new
         {
             active = true,
             details,
             state,
-            large_image = config.LargeImageKey,
+            large_image = largeImageKey,
             large_text = largeText,
             small_image = config.SmallImageKey,
             small_text = smallText,
             start_timestamp = startTimestamp,
             is_paused = isPaused,
-            user_id = userId
+            user_id = userId,
+            item_id = item.Id,
+            item_type = item.Type?.ToString(),
+            cover_image_path = coverPath
         });
     }
 

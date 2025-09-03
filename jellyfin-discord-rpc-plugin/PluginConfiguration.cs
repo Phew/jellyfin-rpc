@@ -11,5 +11,9 @@ public class PluginConfiguration : BasePluginConfiguration
     public string SmallImageKey { get; set; } = "play";
     public string SmallImageTextTemplate { get; set; } = "{play_state}";
     public bool IncludeTimestamps { get; set; } = true;
+
+    // When enabled, large_image will be computed from the item's Id using AssetKeyPrefix + item.Id
+    public bool UseItemCoverAsLargeImage { get; set; } = false;
+    public string AssetKeyPrefix { get; set; } = "cover_";
 }
 

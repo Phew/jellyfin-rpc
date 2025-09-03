@@ -158,6 +158,16 @@ def main() -> None:
             paused_since = None
             long_pause = False
 
+        # Prefer item cover thumbnail URL if provided by the plugin
+        cover_path = data.get("cover_image_path")
+        if cover_path and cfg.get("jellyfin_url"):
+            base = cfg.get("jellyfin_url").rstrip("/")
+            url = base + "/" + cover_path.lstrip("/")
+            if cfg.get("include_token_in_image_url") and api_key:
+                sep = '&' if ('?' in url) else '?'
+                url = f"{url}{sep}X-Emby-Token={api_key}"
+            payload["large_image"] = url
+
         if not long_pause and payload != last_payload:
             try:
                 rpc.update(**payload)

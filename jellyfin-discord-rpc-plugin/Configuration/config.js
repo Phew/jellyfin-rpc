@@ -12,6 +12,8 @@ define(["loading","emby-button","emby-input"], function() {
             page.querySelector('#smallImageKey').value = config.SmallImageKey || '';
             page.querySelector('#smallImageTextTemplate').value = config.SmallImageTextTemplate || '';
             page.querySelector('#includeTimestamps').checked = !!config.IncludeTimestamps;
+            page.querySelector('#useItemCoverAsLargeImage').checked = !!config.UseItemCoverAsLargeImage;
+            page.querySelector('#assetKeyPrefix').value = config.AssetKeyPrefix || '';
         });
     }
 
@@ -24,6 +26,8 @@ define(["loading","emby-button","emby-input"], function() {
             config.SmallImageKey = page.querySelector('#smallImageKey').value;
             config.SmallImageTextTemplate = page.querySelector('#smallImageTextTemplate').value;
             config.IncludeTimestamps = page.querySelector('#includeTimestamps').checked;
+            config.UseItemCoverAsLargeImage = page.querySelector('#useItemCoverAsLargeImage').checked;
+            config.AssetKeyPrefix = page.querySelector('#assetKeyPrefix').value;
             return ApiClient.updatePluginConfiguration(pluginId, config).then(function() {
                 Dashboard.processPluginConfigurationUpdateResult();
             });

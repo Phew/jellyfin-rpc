@@ -39,6 +39,15 @@
                     <div class="inputContainer">
                         <label><input id="includeTimestamps" type="checkbox" /> Include timestamps</label>
                     </div>
+                    <h3>Cover Image Options</h3>
+                    <div class="inputContainer">
+                        <label><input id="useItemCoverAsLargeImage" type="checkbox" /> Use item cover as large image (requires matching Discord asset keys)</label>
+                    </div>
+                    <div class="inputContainer">
+                        <label>Asset Key Prefix</label>
+                        <input is="emby-input" id="assetKeyPrefix" type="text" />
+                        <div class="fieldDescription">Used when cover images are enabled: large image key = prefix + itemIdNoDashes</div>
+                    </div>
                     <button is="emby-button" type="submit" class="raised button-submit block emby-button">Save</button>
                 </form>
             </div>

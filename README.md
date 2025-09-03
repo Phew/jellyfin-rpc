@@ -93,6 +93,19 @@ python server-tools/install_plugin.py
 
 Override plugin directory via `JELLYFIN_PLUGIN_DIR` environment variable if auto-detection doesn't match your setup.
 
+### Cover images via URLs (best-effort)
+
+- The plugin returns `cover_image_path` for the item's primary image.
+- The CLI builds a full URL and (optionally) appends your Jellyfin API key if `include_token_in_image_url` is true in `config.json`:
+
+```json
+{
+  "include_token_in_image_url": true
+}
+```
+
+Note: Official Discord clients may ignore URLs for Rich Presence images. If images don't appear, switch to pre-uploaded assets using the AssetKeyPrefix option in the plugin settings.
+
 ## Security Notes
 
 - The plugin respects Jellyfin authentication and will only return presence for the authenticated user (identified by token).
