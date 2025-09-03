@@ -52,6 +52,8 @@ public class PresenceController : ControllerBase
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
 
         var title = item.Name ?? "";
+        var seriesName = item.SeriesName ?? string.Empty;
+        var genres = (item.Genres != null && item.Genres.Any()) ? string.Join(", ", item.Genres.Take(3)) : string.Empty;
         var seasonEpisode = item.IndexNumber.HasValue
             ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber:00}E{item.IndexNumber:00}" : $"E{item.IndexNumber:00}")
             : string.Empty;
@@ -61,13 +63,26 @@ public class PresenceController : ControllerBase
         var isPaused = playState?.IsPaused == true;
         var playStateText = isPaused ? "Paused" : "Playing";
 
+        // Compute time left string from endTimestamp if available and not paused
+        string timeLeft = string.Empty;
+        if (!isPaused && endTimestamp.HasValue)
+        {
+            var secondsLeft = (int)Math.Max(0, endTimestamp.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            var ts = TimeSpan.FromSeconds(secondsLeft);
+            timeLeft = ts.Hours > 0 ? $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} left" : $"{ts.Minutes:D2}:{ts.Seconds:D2} left";
+        }
+
         string ReplaceTokens(string template)
         {
             return template
                 .Replace("{title}", title)
                 .Replace("{season_episode}", seasonEpisode)
                 .Replace("{progress_percent}", progressPercent.ToString())
-                .Replace("{play_state}", playStateText);
+                .Replace("{play_state}", playStateText)
+                .Replace("{genres}", genres)
+                .Replace("{series_name}", seriesName)
+                .Replace("{time_left}", timeLeft)
+                .Replace("{activity}", item.Type == "Episode" || item.Type == "Series" ? "Watching" : (item.MediaType == MediaType.Audio ? "Listening" : "Watching"));
         }
 
         var details = ReplaceTokens(config.DetailsTemplate);
@@ -76,12 +91,19 @@ public class PresenceController : ControllerBase
         var smallText = ReplaceTokens(config.SmallImageTextTemplate);
 
         long? startTimestamp = null;
+        long? endTimestamp = null;
         if (config.IncludeTimestamps && playState?.PositionTicks.HasValue == true)
         {
             // Convert PositionTicks to a start time: now - position
             var position = TimeSpan.FromTicks(playState.PositionTicks.Value);
             var start = DateTimeOffset.UtcNow - position;
             startTimestamp = start.ToUnixTimeSeconds();
+            if (item.RunTimeTicks.HasValue && item.RunTimeTicks.Value > 0)
+            {
+                var remaining = TimeSpan.FromTicks(item.RunTimeTicks.Value) - position;
+                var end = DateTimeOffset.UtcNow + remaining;
+                endTimestamp = end.ToUnixTimeSeconds();
+            }
         }
 
         // Resolve cover image relative path for Primary if available
@@ -112,6 +134,27 @@ public class PresenceController : ControllerBase
             largeImageKey = config.AssetKeyPrefix + normalizedId;
         }
 
+        // Build external info buttons (IMDb / TMDb) if available
+        string? imdbUrl = null;
+        string? tmdbUrl = null;
+        try
+        {
+            if (item.ProviderIds != null)
+            {
+                if (item.ProviderIds.TryGetValue("Imdb", out var imdbRaw) && !string.IsNullOrWhiteSpace(imdbRaw))
+                {
+                    var imdbId = imdbRaw.StartsWith("tt", StringComparison.OrdinalIgnoreCase) ? imdbRaw : ($"tt{imdbRaw}");
+                    imdbUrl = $"https://www.imdb.com/title/{imdbId}/";
+                }
+                if (item.ProviderIds.TryGetValue("Tmdb", out var tmdbRaw) && !string.IsNullOrWhiteSpace(tmdbRaw))
+                {
+                    var tmdbType = (item.Type == "Episode" || item.Type == "Series") ? "tv" : "movie";
+                    tmdbUrl = $"https://www.themoviedb.org/{tmdbType}/{tmdbRaw}";
+                }
+            }
+        }
+        catch { }
+
         return Ok(new
         {
             active = true,
@@ -122,11 +165,16 @@ public class PresenceController : ControllerBase
             small_image = config.SmallImageKey,
             small_text = smallText,
             start_timestamp = startTimestamp,
+            end_timestamp = isPaused ? null : endTimestamp,
             is_paused = isPaused,
             user_id = userId,
             item_id = item.Id,
             item_type = item.Type?.ToString(),
-            cover_image_path = coverPath
+            cover_image_path = coverPath,
+            links = new [] {
+                imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
+                tmdbUrl != null ? new { label = "TheMovieDb", url = tmdbUrl } : null
+            }.Where(x => x != null)
         });
     }
 

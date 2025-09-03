@@ -11,6 +11,9 @@ from rich.console import Console
 
 console = Console()
 
+# Hardcoded Discord application client ID for production and testing
+DISCORD_CLIENT_ID = "1412865098808168520"
+
 
 def _config_paths() -> Tuple[Path, Path]:
     here = Path(__file__).resolve().parent
@@ -90,7 +93,8 @@ def main() -> None:
     cfg = load_config()
     jellyfin_url = cfg.get("jellyfin_url")
     api_key = cfg.get("api_key")
-    discord_client_id = str(cfg.get("discord_client_id", "1199810830972170261"))
+    # Always use the hardcoded Client ID, ignoring config/env
+    discord_client_id = DISCORD_CLIENT_ID
     interval = float(cfg.get("interval", 5))
 
     rpc = Presence(discord_client_id)
@@ -135,6 +139,7 @@ def main() -> None:
             "small_image": data.get("small_image") or None,
             "small_text": data.get("small_text") or None,
             "start": int(data.get("start_timestamp")) if data.get("start_timestamp") else None,
+            "end": int(data.get("end_timestamp")) if data.get("end_timestamp") else None,
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -167,6 +172,23 @@ def main() -> None:
                 sep = '&' if ('?' in url) else '?'
                 url = f"{url}{sep}X-Emby-Token={api_key}"
             payload["large_image"] = url
+
+        # Map optional links to Discord buttons (max 2)
+        links = data.get("links") or []
+        buttons = []
+        try:
+            for link in links:
+                label = link.get("label")
+                url = link.get("url")
+                if label and url:
+                    buttons.append({"label": str(label)[:32], "url": url})
+                    if len(buttons) == 2:
+                        break
+        except Exception:
+            buttons = []
+
+        if buttons:
+            payload["buttons"] = buttons
 
         if not long_pause and payload != last_payload:
             try:

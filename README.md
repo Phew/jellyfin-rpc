@@ -17,13 +17,14 @@ Response example:
 ```json
 {
   "active": true,
-  "details": "Spirited Away",
-  "state": "S01E03 42%",
+  "details": "Watching: The Batman",
+  "state": "The Batman • Crime, Mystery, Thriller • 02:53:35 left",
   "large_image": "jellyfin",
   "large_text": "Jellyfin",
   "small_image": "play",
   "small_text": "Playing",
   "start_timestamp": 1710000000,
+  "end_timestamp": 1710000000,
   "is_paused": false,
   "user_id": "..."
 }
@@ -72,6 +73,20 @@ python main.py
 
 If no config is found, the app writes an example to the roaming config path and exits with instructions.
 
+### Discord Application (Client ID)
+
+This repo uses a hardcoded Discord Application Client ID: `1412865098808168520`. Rename your Discord application as desired (e.g., Jellyfin) to control the top title. The presence body shows Watching/Listening text, time-left, and buttons.
+
+### Test the CLI without Discord
+
+You can test end-to-end without connecting to Discord:
+
+```bash
+python test_cli.py
+```
+
+This prints the presence JSON and shows a simulated presence with a moving progress bar. It keeps the presence active, updating the "mm:ss left" text every ~20 seconds until you press Ctrl+C.
+
 ### Paused behavior
 
 - When playing: CLI polls every few seconds with jitter to reduce load.
@@ -116,8 +131,12 @@ Note: Official Discord clients may ignore URLs for Rich Presence images. If imag
 
 - `{title}`: Now playing item title
 - `{season_episode}`: SxxEyy or Exx when available
+- `{series_name}`: Series name when applicable
+- `{genres}`: Comma-separated top genres (up to 3)
 - `{progress_percent}`: Integer percent progressed
 - `{play_state}`: Playing or Paused
+- `{activity}`: Watching or Listening automatically
+- `{time_left}`: Human-readable time left while playing
 
 ## Troubleshooting
 
