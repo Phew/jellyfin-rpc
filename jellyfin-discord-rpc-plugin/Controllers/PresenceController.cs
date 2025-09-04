@@ -53,6 +53,7 @@ public class PresenceController : ControllerBase
 
         var title = item.Name ?? "";
         var seriesName = item.SeriesName ?? string.Empty;
+        var itemType = item.Type?.ToString() ?? string.Empty;
         var genres = (item.Genres != null && item.Genres.Any()) ? string.Join(", ", item.Genres.Take(3)) : string.Empty;
         var seasonEpisode = item.IndexNumber.HasValue
             ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber:00}E{item.IndexNumber:00}" : $"E{item.IndexNumber:00}")
@@ -65,7 +66,8 @@ public class PresenceController : ControllerBase
 
         string ReplaceTokens(string template)
         {
-            var activity = item.MediaType == MediaType.Audio ? "Listening" : "Watching";
+            var mediaType = item.MediaType?.ToString();
+            var activity = string.Equals(mediaType, "Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching";
             return template
                 .Replace("{title}", title)
                 .Replace("{season_episode}", seasonEpisode)
@@ -151,7 +153,8 @@ public class PresenceController : ControllerBase
                 }
                 if (item.ProviderIds.TryGetValue("Tmdb", out var tmdbRaw) && !string.IsNullOrWhiteSpace(tmdbRaw))
                 {
-                    var tmdbType = (item.Type == BaseItemKind.Episode || item.Type == BaseItemKind.Series) ? "tv" : "movie";
+                    var isTv = itemType.Equals("Episode", StringComparison.OrdinalIgnoreCase) || itemType.Equals("Series", StringComparison.OrdinalIgnoreCase);
+                    var tmdbType = isTv ? "tv" : "movie";
                     tmdbUrl = $"https://www.themoviedb.org/{tmdbType}/{tmdbRaw}";
                 }
             }
@@ -172,7 +175,7 @@ public class PresenceController : ControllerBase
             is_paused = isPaused,
             user_id = userId,
             item_id = item.Id,
-            item_type = item.Type.ToString(),
+            item_type = itemType,
             cover_image_path = coverPath,
             links = new [] {
                 imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
