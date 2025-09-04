@@ -5,7 +5,7 @@ namespace Jellyfin.Plugin.DiscordRpc;
 public class PluginConfiguration : BasePluginConfiguration
 {
     public string DetailsTemplate { get; set; } = "{series_or_title}";
-    public string StateTemplate { get; set; } = "{genres}\n{time_left}";
+    public string StateTemplate { get; set; } = "{genres} • {time_left}";
     public string LargeImageKey { get; set; } = "jellyfin";
     public string LargeImageTextTemplate { get; set; } = "Jellyfin";
     public string SmallImageKey { get; set; } = "play";
