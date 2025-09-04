@@ -61,7 +61,7 @@ public class PresenceController : ControllerBase
         var itemType = item.Type.ToString();
         var genres = (item.Genres != null && item.Genres.Any()) ? string.Join(", ", item.Genres.Take(3)) : string.Empty;
         var seasonEpisode = item.IndexNumber.HasValue
-            ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber:00}E{item.IndexNumber:00}" : $"E{item.IndexNumber:00}")
+            ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber}E{item.IndexNumber}" : $"E{item.IndexNumber}")
             : string.Empty;
         var progressPercent = playState?.PositionTicks.HasValue == true && item.RunTimeTicks.HasValue && item.RunTimeTicks.Value > 0
             ? (int)Math.Round(100.0 * playState.PositionTicks.Value / item.RunTimeTicks.Value)
@@ -74,7 +74,8 @@ public class PresenceController : ControllerBase
             var mediaType = item.MediaType.ToString();
             var activity = string.Equals(mediaType, "Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching";
             var seriesOrTitle = string.IsNullOrEmpty(seriesName) ? title : seriesName;
-            var episodeCodeTitle = title; // no code in simple layout
+            var seriesOrTitleWithCode = (!string.IsNullOrEmpty(seriesName) && !string.IsNullOrEmpty(seasonEpisode)) ? $"{seriesName} {seasonEpisode}" : seriesOrTitle;
+            var episodeCodeTitle = title; // simple layout
             return template
                 .Replace("{title}", title)
                 .Replace("{season_episode}", seasonEpisode)
@@ -84,7 +85,7 @@ public class PresenceController : ControllerBase
                 .Replace("{series_name}", seriesName)
                 .Replace("{time_left}", "")
                 .Replace("{activity}", activity)
-                .Replace("{series_or_title}", seriesOrTitle)
+                .Replace("{series_or_title}", seriesOrTitleWithCode)
                 .Replace("{episode_code_title}", episodeCodeTitle);
         }
 
