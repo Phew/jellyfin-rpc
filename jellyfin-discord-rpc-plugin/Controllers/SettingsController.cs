@@ -66,13 +66,29 @@ document.getElementById('f').addEventListener('submit', async (e)=>{
     DefaultImageAssetKey: document.getElementById('DefaultImageAssetKey').value,
     Images: { ENABLE_IMAGES: document.getElementById('Images_ENABLE').checked }
   };
-  const r = await fetch(base+`/Plugins/Configuration/${pluginId}` + (apiKey?`?api_key=${apiKey}`:''), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(c)});
+  const r = await fetch(base+`/Plugins/DiscordRpc/Settings/Save` + (apiKey?`?api_key=${apiKey}`:''), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(c)});
   if(r.ok){ alert('Saved'); } else { alert('Save failed: '+r.status); }
 });
 getCfg();
 </script>
 </body></html>";
         return Content(html, "text/html");
+    }
+
+    [HttpPost("Save")]
+    public IActionResult Save([FromBody] PluginConfiguration cfg)
+    {
+        if (cfg == null)
+        {
+            return BadRequest();
+        }
+        var plugin = Plugin.Instance;
+        if (plugin == null)
+        {
+            return StatusCode(500, new { error = "Plugin instance not available" });
+        }
+        plugin.UpdateConfiguration(cfg);
+        return Ok(new { ok = true });
     }
 }
 
