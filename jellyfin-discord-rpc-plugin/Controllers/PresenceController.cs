@@ -132,11 +132,29 @@ public class PresenceController : ControllerBase
             {
                 primaryTag = item.ImageTags[ImageType.Primary];
             }
-            if (item.Id != Guid.Empty)
+            // Prefer series poster for episodes
+            Guid coverItemId = item.Id;
+            if (itemType.Equals("Episode", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(item.SeriesId) && Guid.TryParse(item.SeriesId, out var sid))
+                    {
+                        coverItemId = sid;
+                        // Try to use series primary tag when available
+                        if (!string.IsNullOrEmpty(item.SeriesPrimaryImageTag))
+                        {
+                            primaryTag = item.SeriesPrimaryImageTag;
+                        }
+                    }
+                }
+                catch { }
+            }
+            if (coverItemId != Guid.Empty)
             {
                 coverPath = string.IsNullOrEmpty(primaryTag)
-                    ? $"Items/{item.Id}/Images/Primary"
-                    : $"Items/{item.Id}/Images/Primary?tag={primaryTag}";
+                    ? $"Items/{coverItemId}/Images/Primary"
+                    : $"Items/{coverItemId}/Images/Primary?tag={primaryTag}";
             }
         }
         catch { }
@@ -172,18 +190,20 @@ public class PresenceController : ControllerBase
         catch { }
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var publicCoverUrl = item.Id != Guid.Empty
-                ? (string.IsNullOrEmpty(primaryTag)
-                    ? $"{baseUrl}/Plugins/DiscordRpc/Cover/{item.Id}"
-                    : $"{baseUrl}/Plugins/DiscordRpc/Cover/{item.Id}?tag={WebUtility.UrlEncode(primaryTag)}")
-                : null;
+            string? publicCoverUrl = null;
+            if (config.Images != null && config.Images.ENABLE_IMAGES && coverPath != null)
+            {
+                // Build direct Jellyfin URL with resize params
+                var separator = coverPath.Contains("?") ? '&' : '?';
+                publicCoverUrl = $"{baseUrl}/{coverPath}{separator}quality=90&fillHeight=512&fillWidth=512";
+            }
 
             return Ok(new
             {
                 active = true,
                 details,
                 state,
-                large_image = largeImageKey,
+                large_image = publicCoverUrl ?? largeImageKey ?? config.DefaultImageAssetKey,
                 large_text = largeText,
                 small_image = config.SmallImageKey,
                 small_text = smallText,

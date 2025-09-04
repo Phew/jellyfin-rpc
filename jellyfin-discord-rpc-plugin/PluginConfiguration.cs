@@ -15,5 +15,14 @@ public class PluginConfiguration : BasePluginConfiguration
     // When enabled, large_image will be computed from the item's Id using AssetKeyPrefix + item.Id
     public bool UseItemCoverAsLargeImage { get; set; } = false;
     public string AssetKeyPrefix { get; set; } = "cover_";
+
+    // Image settings group
+    public ImagesConfig Images { get; set; } = new ImagesConfig();
+    public string DefaultImageAssetKey { get; set; } = "jellyfin";
+}
+
+public class ImagesConfig
+{
+    public bool ENABLE_IMAGES { get; set; } = true;
 }
 
