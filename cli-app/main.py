@@ -11,6 +11,7 @@ from rich.console import Console
 import socket
 import platform
 import uuid
+import logging
 
 console = Console()
 
@@ -45,6 +46,7 @@ def load_config() -> dict:
         "api_key": os.environ.get("JELLYFIN_API_KEY"),
         "discord_client_id": os.environ.get("DISCORD_CLIENT_ID"),
         "interval": float(os.environ.get("POLL_INTERVAL", "5")),
+        "Images": {"ENABLE_IMAGES": True},
     }
 
     if not cfg["jellyfin_url"] or not cfg["api_key"]:
@@ -207,19 +209,29 @@ def main() -> None:
             paused_since = None
             long_pause = False
 
-        # Prefer item cover thumbnail URL if provided by the plugin
-        # Prefer public URL if provided
-        public_url = data.get("public_cover_url")
-        cover_path = data.get("cover_image_path")
-        if public_url:
-            payload["large_image"] = public_url
-        elif cover_path and cfg.get("jellyfin_url"):
-            base = cfg.get("jellyfin_url").rstrip("/")
-            url = base + "/" + cover_path.lstrip("/")
-            if cfg.get("include_token_in_image_url") and api_key:
-                sep = '&' if ('?' in url) else '?'
-                url = f"{url}{sep}X-Emby-Token={api_key}"
-            payload["large_image"] = url
+        # Jellyfin image handling (client-side fallback)
+        try:
+            enable_images = bool(cfg.get("Images", {}).get("ENABLE_IMAGES", False))
+            if enable_images:
+                public_url = data.get("public_cover_url")
+                cover_path = data.get("cover_image_path")
+                if public_url:
+                    payload["large_image"] = public_url
+                elif cover_path and cfg.get("jellyfin_url"):
+                    base = cfg.get("jellyfin_url").rstrip("/")
+                    url = base + "/" + cover_path.lstrip("/")
+                    # Add resize params if missing
+                    sep = '&' if ('?' in url) else '?'
+                    url = f"{url}{sep}quality=90&fillHeight=512&fillWidth=512"
+                    if cfg.get("include_token_in_image_url") and api_key:
+                        url += f"&X-Emby-Token={api_key}"
+                    payload["large_image"] = url
+                else:
+                    logging.warning("No Primary image in presence; falling back to default asset")
+            else:
+                logging.info("Images disabled in config; skipping artwork")
+        except Exception as e:
+            logging.error(f"Failed to build image URL for presence: {e}")
 
         # Map optional links to Discord buttons (max 2)
         links = data.get("links") or []
@@ -263,6 +275,7 @@ def main() -> None:
                 rpc.update(**payload)
                 last_payload = payload
             except Exception as e:
+                logging.error(f"Failed to update Discord RPC: {e}")
                 console.print(f"[red]Failed to update RPC: {e}[/red]")
 
         # Backoff when paused; normal faster polling when playing
