@@ -126,6 +126,7 @@ public class PresenceController : ControllerBase
         // Resolve cover image relative path for Primary if available
         string? coverPath = null;
         string? primaryTag = null;
+        Guid coverItemId = item.Id;
         try
         {
             if (item.ImageTags != null && item.ImageTags.ContainsKey(ImageType.Primary))
@@ -133,22 +134,13 @@ public class PresenceController : ControllerBase
                 primaryTag = item.ImageTags[ImageType.Primary];
             }
             // Prefer series poster for episodes
-            Guid coverItemId = item.Id;
             if (itemType.Equals("Episode", StringComparison.OrdinalIgnoreCase))
             {
-                try
+                // item.SeriesId is Guid? in Jellyfin DTOs
+                if (item.SeriesId.HasValue && item.SeriesId.Value != Guid.Empty)
                 {
-                    if (!string.IsNullOrEmpty(item.SeriesId) && Guid.TryParse(item.SeriesId, out var sid))
-                    {
-                        coverItemId = sid;
-                        // Try to use series primary tag when available
-                        if (!string.IsNullOrEmpty(item.SeriesPrimaryImageTag))
-                        {
-                            primaryTag = item.SeriesPrimaryImageTag;
-                        }
-                    }
+                    coverItemId = item.SeriesId.Value;
                 }
-                catch { }
             }
             if (coverItemId != Guid.Empty)
             {
@@ -191,11 +183,15 @@ public class PresenceController : ControllerBase
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             string? publicCoverUrl = null;
-            if (config.Images != null && config.Images.ENABLE_IMAGES && coverPath != null)
+            if (config.Images != null && config.Images.ENABLE_IMAGES)
             {
-                // Build direct Jellyfin URL with resize params
-                var separator = coverPath.Contains("?") ? '&' : '?';
-                publicCoverUrl = $"{baseUrl}/{coverPath}{separator}quality=90&fillHeight=512&fillWidth=512";
+                var idForUrl = coverItemId != Guid.Empty ? coverItemId : item.Id;
+                var url = $"{baseUrl}/Items/{idForUrl}/Images/Primary?quality=90&fillHeight=512&fillWidth=512";
+                if (!string.IsNullOrEmpty(primaryTag))
+                {
+                    url += $"&tag={WebUtility.UrlEncode(primaryTag)}";
+                }
+                publicCoverUrl = url;
             }
 
             return Ok(new
