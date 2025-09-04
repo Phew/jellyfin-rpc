@@ -15,7 +15,7 @@ import uuid
 console = Console()
 
 # Hardcoded Discord application client ID for production and testing
-DISCORD_CLIENT_ID = "1412865098808168520"
+DISCORD_CLIENT_ID = "1413211075222048879"
 
 
 def _config_paths() -> Tuple[Path, Path]:

@@ -202,7 +202,7 @@ def main():
     ]
 
     # Always use the hardcoded Client ID for testing and prod
-    client_id = "1412865098808168520"
+    client_id = "1413211075222048879"
     rpc = connect_rpc(client_id)
     send_test_presence(rpc)
 

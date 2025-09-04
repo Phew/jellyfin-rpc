@@ -318,6 +318,25 @@ public class PresenceController : ControllerBase
             bool isPaused = play.TryGetProperty("IsPaused", out var ip) && ip.ValueKind == JsonValueKind.True;
             int progress = (posTicks.HasValue && runTicks.HasValue && runTicks.Value > 0) ? (int)Math.Round(100.0 * posTicks.Value / runTicks.Value) : 0;
 
+            // Genres (top 3)
+            string genres = string.Empty;
+            if (item.TryGetProperty("Genres", out var gEl) && gEl.ValueKind == JsonValueKind.Array)
+            {
+                var list = new List<string>();
+                int count = 0;
+                foreach (var ge in gEl.EnumerateArray())
+                {
+                    var gs = ge.GetString();
+                    if (!string.IsNullOrEmpty(gs))
+                    {
+                        list.Add(gs);
+                        count++;
+                        if (count == 3) break;
+                    }
+                }
+                genres = string.Join(", ", list);
+            }
+
             long? startTs = null;
             long? endTs = null;
             if (posTicks.HasValue)
@@ -331,7 +350,9 @@ public class PresenceController : ControllerBase
                 }
             }
 
-            string details = $"Watching: {title}";
+            // Simple layout: title/series on top, then genres, then time left
+            string seriesOrTitle = string.IsNullOrEmpty(seriesName) ? title : seriesName;
+            string details = seriesOrTitle;
             string timeLeft = string.Empty;
             if (!isPaused && endTs.HasValue)
             {
@@ -339,7 +360,7 @@ public class PresenceController : ControllerBase
                 var ts = TimeSpan.FromSeconds(secondsLeft);
                 timeLeft = ts.Hours > 0 ? $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} left" : $"{ts.Minutes:D2}:{ts.Seconds:D2} left";
             }
-            string state = string.IsNullOrEmpty(seriesName) ? $"{seasonEpisode} {progress}% {timeLeft}".Trim() : $"{seriesName} {seasonEpisode} {timeLeft}".Trim();
+            string state = string.IsNullOrEmpty(genres) ? timeLeft : ($"{genres}\n{timeLeft}").Trim();
 
             return Ok(new
             {
