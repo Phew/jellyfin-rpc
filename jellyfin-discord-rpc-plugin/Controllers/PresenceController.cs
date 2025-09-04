@@ -376,6 +376,34 @@ public class PresenceController : ControllerBase
             }
             string state = string.IsNullOrEmpty(genres) ? timeLeft : ($"{genres}\n{timeLeft}").Trim();
 
+            // Build image fields for fallback path
+            string? imageId = null;
+            if (item.TryGetProperty("SeriesId", out var sid) && sid.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(sid.GetString()))
+            {
+                imageId = sid.GetString();
+            }
+            else if (item.TryGetProperty("Id", out var iid) && iid.ValueKind == JsonValueKind.String)
+            {
+                imageId = iid.GetString();
+            }
+
+            string? publicCoverUrl = null;
+            string? coverImagePath = null;
+            if (!string.IsNullOrEmpty(imageId))
+            {
+                publicCoverUrl = baseUrl + "/Items/" + imageId + "/Images/Primary?quality=90&fillHeight=512&fillWidth=512";
+                coverImagePath = "Items/" + imageId + "/Images/Primary";
+                if (item.TryGetProperty("ImageTags", out var tags) && tags.ValueKind == JsonValueKind.Object && tags.TryGetProperty("Primary", out var ptag) && ptag.ValueKind == JsonValueKind.String)
+                {
+                    var tagVal = ptag.GetString();
+                    if (!string.IsNullOrEmpty(tagVal))
+                    {
+                        publicCoverUrl += "&tag=" + WebUtility.UrlEncode(tagVal);
+                        coverImagePath += "?tag=" + WebUtility.UrlEncode(tagVal);
+                    }
+                }
+            }
+
             return Ok(new
             {
                 active = true,
@@ -383,7 +411,9 @@ public class PresenceController : ControllerBase
                 state,
                 start_timestamp = startTs,
                 end_timestamp = isPaused ? null : endTs,
-                is_paused = isPaused
+                is_paused = isPaused,
+                cover_image_path = coverImagePath,
+                public_cover_url = publicCoverUrl
             });
         }
         catch (Exception ex)

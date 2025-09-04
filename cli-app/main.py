@@ -14,22 +14,33 @@ import uuid
 import logging
 
 console = Console()
+def _default_log_path() -> str:
+    try:
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            base = Path(appdata) / "JellyfinDiscordRPC"
+        else:
+            base = Path.home() / ".config" / "jellyfin-discord-rpc"
+        base.mkdir(parents=True, exist_ok=True)
+        return str(base / "rpc.log")
+    except Exception:
+        return str(Path.cwd() / "rpc.log")
+
+
 def setup_logging() -> None:
-    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
-    level = getattr(logging, level_name, logging.INFO)
-    if not logging.getLogger().handlers:
-        logging.basicConfig(level=level, format='[%(levelname)s] %(message)s')
-    else:
-        logging.getLogger().setLevel(level)
-    log_file = os.environ.get("LOG_FILE")
-    if log_file:
-        try:
-            fh = logging.FileHandler(log_file, encoding='utf-8')
-            fh.setLevel(level)
-            fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
-            logging.getLogger().addHandler(fh)
-        except Exception:
-            pass
+    level = logging.INFO
+    # Always configure console logger
+    logging.basicConfig(level=level, format='[%(levelname)s] %(message)s')
+
+    # Always configure file logger to a default path unless already present
+    log_file = os.environ.get("LOG_FILE") or _default_log_path()
+    try:
+        fh = logging.FileHandler(log_file, encoding='utf-8')
+        fh.setLevel(level)
+        fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        logging.getLogger().addHandler(fh)
+    except Exception:
+        pass
 
 
 # No hardcoded client id; read from config or DISCORD_CLIENT_ID env
@@ -130,6 +141,8 @@ def get_presence(base_url: str, api_key: str) -> Optional[dict]:
 def main() -> None:
     setup_logging()
     cfg = load_config()
+    logging.info("Starting Jellyfin Discord RPC client")
+    logging.info(f"Server URL: {cfg.get('jellyfin_url')}")
     jellyfin_url = cfg.get("jellyfin_url")
     api_key = cfg.get("api_key")
     # Use client id from config or env; require present
@@ -238,6 +251,7 @@ def main() -> None:
                 public_url = data.get("public_cover_url")
                 cover_path = data.get("cover_image_path")
                 if public_url:
+                    logging.info(f"Using public_cover_url: {public_url}")
                     payload["large_image"] = public_url
                 elif cover_path and cfg.get("jellyfin_url"):
                     base = cfg.get("jellyfin_url").rstrip("/")
@@ -247,9 +261,10 @@ def main() -> None:
                     url = f"{url}{sep}quality=90&fillHeight=512&fillWidth=512"
                     if cfg.get("include_token_in_image_url") and api_key:
                         url += f"&X-Emby-Token={api_key}"
+                    logging.info(f"Built cover_path URL: {url}")
                     payload["large_image"] = url
                 else:
-                    logging.warning("No Primary image in presence; falling back to default asset")
+                    logging.warning("No Primary image fields in presence; falling back to default asset")
             else:
                 logging.info("Images disabled in config; skipping artwork")
         except Exception as e:
@@ -291,6 +306,10 @@ def main() -> None:
 
         if not long_pause and payload != last_payload:
             try:
+                if "large_image" in payload:
+                    logging.info(f"Updating RPC with large_image: {payload['large_image']}")
+                else:
+                    logging.info("Updating RPC with no large_image (asset-only)")
                 rpc.update(**payload)
                 last_payload = payload
             except Exception as e:
