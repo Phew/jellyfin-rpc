@@ -42,15 +42,8 @@ def setup_logging() -> None:
     root.handlers.clear()
     root.setLevel(level)
 
-    fmt_console = logging.Formatter('[%(levelname)s] %(message)s')
     fmt_file = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
     flt = _OnlyThisFile()
-
-    sh = logging.StreamHandler()
-    sh.setLevel(level)
-    sh.setFormatter(fmt_console)
-    sh.addFilter(flt)
-    root.addHandler(sh)
 
     log_file = os.environ.get("LOG_FILE") or _default_log_path()
     try:
@@ -169,6 +162,7 @@ def main() -> None:
     logging.info(f"Server URL: {cfg.get('jellyfin_url')}")
     jellyfin_url = cfg.get("jellyfin_url")
     api_key = cfg.get("api_key")
+    username = (cfg.get("username") or "").strip()
     # Use client id from config or env; require present
     discord_client_id = str(cfg.get("discord_client_id") or os.environ.get("DISCORD_CLIENT_ID") or "")
     if not discord_client_id:
@@ -218,6 +212,14 @@ def main() -> None:
         if not data:
             time.sleep(interval + random.uniform(0, 0.5 * max(0.1, interval)))
             continue
+
+        # Optional username scoping: if server can't resolve user from token
+        if username:
+            owner = (data.get("user_name") or "").strip().lower()
+            if owner and owner != username.lower():
+                # Skip updates that aren't for this username
+                time.sleep(interval)
+                continue
 
         if not data.get("active"):
             if last_payload is not None:

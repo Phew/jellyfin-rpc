@@ -25,11 +25,12 @@ public class PresenceController : ControllerBase
     {
         try
         {
+            var requestedUser = (Request.Query["username"].FirstOrDefault() ?? string.Empty).Trim();
             var sessionManager = HttpContext.RequestServices.GetService(typeof(ISessionManager)) as ISessionManager;
             if (sessionManager == null)
             {
                 // Fallback: query server Sessions API via loopback
-                return await GetPresenceViaHttpAsync();
+                return await GetPresenceViaHttpAsync(requestedUser);
             }
             var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
@@ -38,7 +39,10 @@ public class PresenceController : ControllerBase
             }
 
             var sessions = sessionManager.Sessions.ToList();
-            var userSessions = sessions.Where(s => s.UserId == userId).ToList();
+            var scoped = string.IsNullOrEmpty(requestedUser)
+                ? sessions.Where(s => s.UserId == userId)
+                : sessions.Where(s => (s.UserName ?? string.Empty).Equals(requestedUser, StringComparison.OrdinalIgnoreCase));
+            var userSessions = scoped.ToList();
             var candidates = userSessions.Where(s => s.NowPlayingItem != null).ToList();
             if (candidates.Count == 0)
             {
@@ -272,7 +276,7 @@ public class PresenceController : ControllerBase
         return null;
     }
 
-    private async Task<IActionResult> GetPresenceViaHttpAsync()
+    private async Task<IActionResult> GetPresenceViaHttpAsync(string requestedUser)
     {
         try
         {
@@ -292,7 +296,7 @@ public class PresenceController : ControllerBase
             http.Timeout = TimeSpan.FromSeconds(5);
             http.DefaultRequestHeaders.Add("X-Emby-Token", apiKey);
 
-            // Get sessions and pick the first session for this token
+            // Get sessions and pick the first session for this token (or username if provided)
             var url = baseUrl + "/Sessions" + $"?api_key={apiKey}";
             var resp = await http.GetAsync(url);
             resp.EnsureSuccessStatusCode();
@@ -307,6 +311,13 @@ public class PresenceController : ControllerBase
             JsonElement? firstWithItem = null;
             foreach (var el in root.EnumerateArray())
             {
+                if (!string.IsNullOrEmpty(requestedUser))
+                {
+                    if (!el.TryGetProperty("UserName", out var un) || !string.Equals(un.GetString() ?? string.Empty, requestedUser, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                }
                 if (el.TryGetProperty("NowPlayingItem", out var npi) && npi.ValueKind != JsonValueKind.Null)
                 {
                     firstWithItem = el;
