@@ -1,7 +1,7 @@
 {
   "jellyfin_url": "https://your.jellyfin",
   "api_key": "YOUR_API_KEY",
-  "discord_client_id": "1199810830972170261",
+  "discord_client_id": "<YOUR_DISCORD_APP_CLIENT_ID>",
   "interval": 5,
   "include_token_in_image_url": false
 }

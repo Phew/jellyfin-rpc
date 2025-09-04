@@ -14,8 +14,7 @@ import uuid
 
 console = Console()
 
-# Default Discord application client ID (can be overridden via config)
-DEFAULT_DISCORD_CLIENT_ID = "1413211075222048879"
+# No hardcoded client id; read from config or DISCORD_CLIENT_ID env
 
 
 def _config_paths() -> Tuple[Path, Path]:
@@ -44,7 +43,7 @@ def load_config() -> dict:
     cfg = {
         "jellyfin_url": os.environ.get("JELLYFIN_URL"),
         "api_key": os.environ.get("JELLYFIN_API_KEY"),
-        "discord_client_id": os.environ.get("DISCORD_CLIENT_ID", DEFAULT_DISCORD_CLIENT_ID),
+        "discord_client_id": os.environ.get("DISCORD_CLIENT_ID"),
         "interval": float(os.environ.get("POLL_INTERVAL", "5")),
     }
 
@@ -111,8 +110,11 @@ def main() -> None:
     cfg = load_config()
     jellyfin_url = cfg.get("jellyfin_url")
     api_key = cfg.get("api_key")
-    # Use client id from config (fallback to default)
-    discord_client_id = str(cfg.get("discord_client_id") or DEFAULT_DISCORD_CLIENT_ID)
+    # Use client id from config or env; require present
+    discord_client_id = str(cfg.get("discord_client_id") or os.environ.get("DISCORD_CLIENT_ID") or "")
+    if not discord_client_id:
+        console.print("[red]Missing Discord Client ID.[/red] Set discord_client_id in cli-app/config.json or DISCORD_CLIENT_ID env.")
+        raise SystemExit(1)
     interval = float(cfg.get("interval", 5))
 
     rpc = Presence(discord_client_id)

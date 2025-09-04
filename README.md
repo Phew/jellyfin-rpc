@@ -17,8 +17,8 @@ Response example:
 ```json
 {
   "active": true,
-  "details": "Watching: The Batman",
-  "state": "The Batman • Crime, Mystery, Thriller • 02:53:35 left",
+  "details": "Doctor Who S1E1",
+  "state": "Action, Drama, Mystery • 00:46:18 left",
   "large_image": "jellyfin",
   "large_text": "Jellyfin",
   "small_image": "play",
@@ -75,7 +75,7 @@ If no config is found, the app writes an example to the roaming config path and 
 
 ### Discord Application (Client ID)
 
-This repo uses a hardcoded Discord Application Client ID: `1412865098808168520`. Rename your Discord application as desired (e.g., Jellyfin) to control the top title. The presence body shows Watching/Listening text, time-left, and buttons.
+Create a Discord application and copy its Client ID. Put it into `cli-app/config.json` under `discord_client_id`. The application name becomes the bold title on the card (e.g., rename it to "Jellyfin").
 
 ### Test the CLI without Discord
 
@@ -108,10 +108,10 @@ python server-tools/install_plugin.py
 
 Override plugin directory via `JELLYFIN_PLUGIN_DIR` environment variable if auto-detection doesn't match your setup.
 
-### Cover images via URLs (best-effort)
+### Cover images via public URLs (best-effort)
 
-- The plugin returns `cover_image_path` for the item's primary image.
-- The CLI builds a full URL and (optionally) appends your Jellyfin API key if `include_token_in_image_url` is true in `config.json`:
+- The plugin returns both `cover_image_path` and a `public_cover_url` served anonymously via `/Plugins/DiscordRpc/Cover/{itemId}`.
+- The CLI prefers `public_cover_url` for the large image; if unavailable it falls back to `cover_image_path` (and can append the API token when enabled):
 
 ```json
 {
@@ -120,6 +120,12 @@ Override plugin directory via `JELLYFIN_PLUGIN_DIR` environment variable if auto
 ```
 
 Note: Official Discord clients may ignore URLs for Rich Presence images. If images don't appear, switch to pre-uploaded assets using the AssetKeyPrefix option in the plugin settings.
+
+### CLI UX niceties
+
+- Clears the terminal on start and shows a simple header
+- Prints the current title/genres/time-left only when playback starts or the item changes (stays quiet between polls)
+- Updates the terminal window title to the current item
 
 ## Security Notes
 

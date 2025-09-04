@@ -201,8 +201,11 @@ def main():
         }
     ]
 
-    # Always use the hardcoded Client ID for testing and prod
-    client_id = "1413211075222048879"
+    # Read client id from config or env
+    client_id = str(cfg.get("discord_client_id") or os.environ.get("DISCORD_CLIENT_ID") or "")
+    if not client_id:
+        print("Missing Discord Client ID. Set discord_client_id in cli-app/config.json or DISCORD_CLIENT_ID env.")
+        sys.exit(1)
     rpc = connect_rpc(client_id)
     send_test_presence(rpc)
 
