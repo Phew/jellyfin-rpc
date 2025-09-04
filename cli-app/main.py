@@ -127,6 +127,14 @@ def main() -> None:
     last_payload = None
     paused_since: float | None = None
     long_pause = False
+    last_content_key: Optional[str] = None
+
+    # Clear console on start and print header
+    try:
+        os.system('cls' if os.name == 'nt' else 'clear')
+    except Exception:
+        pass
+    console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
 
     # Initial small randomized delay to avoid stampeding herd when many clients start
     time.sleep(random.uniform(0, min(2.0, interval)))
@@ -146,6 +154,10 @@ def main() -> None:
                 last_payload = None
             paused_since = None
             long_pause = False
+            content_key = "idle"
+            if content_key != last_content_key:
+                console.print("[dim]Idle[/dim]")
+                last_content_key = content_key
             time.sleep(interval + random.uniform(0, 0.5 * max(0.1, interval)))
             continue
 
@@ -211,6 +223,25 @@ def main() -> None:
 
         if buttons:
             payload["buttons"] = buttons
+
+        # Show content change once
+        content_key = str(data.get("item_id") or data.get("details") or "unknown")
+        if content_key != last_content_key:
+            title_line = data.get("details") or ""
+            state_line = data.get("state") or ""
+            # Clear screen for a fresh view
+            try:
+                os.system('cls' if os.name == 'nt' else 'clear')
+            except Exception:
+                pass
+            console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
+            if title_line:
+                console.print(f"[bold]{title_line}[/bold]")
+            if state_line:
+                for ln in str(state_line).split("\n"):
+                    if ln:
+                        console.print(ln)
+            last_content_key = content_key
 
         if not long_pause and payload != last_payload:
             try:
