@@ -72,6 +72,8 @@ public class PresenceController : ControllerBase
         {
             var mediaType = item.MediaType.ToString();
             var activity = string.Equals(mediaType, "Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching";
+            var seriesOrTitle = string.IsNullOrEmpty(seriesName) ? title : seriesName;
+            var episodeCodeTitle = string.IsNullOrEmpty(seriesName) ? title : ($"{seasonEpisode} {title}".Trim());
             return template
                 .Replace("{title}", title)
                 .Replace("{season_episode}", seasonEpisode)
@@ -80,7 +82,9 @@ public class PresenceController : ControllerBase
                 .Replace("{genres}", genres)
                 .Replace("{series_name}", seriesName)
                 .Replace("{time_left}", "")
-                .Replace("{activity}", activity);
+                .Replace("{activity}", activity)
+                .Replace("{series_or_title}", seriesOrTitle)
+                .Replace("{episode_code_title}", episodeCodeTitle);
         }
 
         var details = ReplaceTokens(config.DetailsTemplate);
