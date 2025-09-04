@@ -65,6 +65,7 @@ public class PresenceController : ControllerBase
 
         string ReplaceTokens(string template)
         {
+            var activity = item.MediaType == MediaType.Audio ? "Listening" : "Watching";
             return template
                 .Replace("{title}", title)
                 .Replace("{season_episode}", seasonEpisode)
@@ -73,7 +74,7 @@ public class PresenceController : ControllerBase
                 .Replace("{genres}", genres)
                 .Replace("{series_name}", seriesName)
                 .Replace("{time_left}", "")
-                .Replace("{activity}", item.Type == "Episode" || item.Type == "Series" ? "Watching" : (item.MediaType != null && item.MediaType.Equals("Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching"));
+                .Replace("{activity}", activity);
         }
 
         var details = ReplaceTokens(config.DetailsTemplate);
@@ -119,13 +120,11 @@ public class PresenceController : ControllerBase
             {
                 primaryTag = item.ImageTags[ImageType.Primary];
             }
-            else if (!string.IsNullOrEmpty(item.PrimaryImageTag))
+            if (item.Id != Guid.Empty)
             {
-                primaryTag = item.PrimaryImageTag;
-            }
-            if (!string.IsNullOrEmpty(primaryTag) && item.Id != Guid.Empty)
-            {
-                coverPath = $"Items/{item.Id}/Images/Primary?tag={primaryTag}";
+                coverPath = string.IsNullOrEmpty(primaryTag)
+                    ? $"Items/{item.Id}/Images/Primary"
+                    : $"Items/{item.Id}/Images/Primary?tag={primaryTag}";
             }
         }
         catch { }
@@ -152,7 +151,7 @@ public class PresenceController : ControllerBase
                 }
                 if (item.ProviderIds.TryGetValue("Tmdb", out var tmdbRaw) && !string.IsNullOrWhiteSpace(tmdbRaw))
                 {
-                    var tmdbType = (item.Type == "Episode" || item.Type == "Series") ? "tv" : "movie";
+                    var tmdbType = (item.Type == BaseItemKind.Episode || item.Type == BaseItemKind.Series) ? "tv" : "movie";
                     tmdbUrl = $"https://www.themoviedb.org/{tmdbType}/{tmdbRaw}";
                 }
             }
@@ -173,7 +172,7 @@ public class PresenceController : ControllerBase
             is_paused = isPaused,
             user_id = userId,
             item_id = item.Id,
-            item_type = item.Type?.ToString(),
+            item_type = item.Type.ToString(),
             cover_image_path = coverPath,
             links = new [] {
                 imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
