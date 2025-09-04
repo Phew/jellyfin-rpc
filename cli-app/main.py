@@ -14,8 +14,8 @@ import uuid
 
 console = Console()
 
-# Hardcoded Discord application client ID for production and testing
-DISCORD_CLIENT_ID = "1413211075222048879"
+# Default Discord application client ID (can be overridden via config)
+DEFAULT_DISCORD_CLIENT_ID = "1413211075222048879"
 
 
 def _config_paths() -> Tuple[Path, Path]:
@@ -44,7 +44,7 @@ def load_config() -> dict:
     cfg = {
         "jellyfin_url": os.environ.get("JELLYFIN_URL"),
         "api_key": os.environ.get("JELLYFIN_API_KEY"),
-        "discord_client_id": os.environ.get("DISCORD_CLIENT_ID", "1199810830972170261"),
+        "discord_client_id": os.environ.get("DISCORD_CLIENT_ID", DEFAULT_DISCORD_CLIENT_ID),
         "interval": float(os.environ.get("POLL_INTERVAL", "5")),
     }
 
@@ -111,8 +111,8 @@ def main() -> None:
     cfg = load_config()
     jellyfin_url = cfg.get("jellyfin_url")
     api_key = cfg.get("api_key")
-    # Always use the hardcoded Client ID, ignoring config/env
-    discord_client_id = DISCORD_CLIENT_ID
+    # Use client id from config (fallback to default)
+    discord_client_id = str(cfg.get("discord_client_id") or DEFAULT_DISCORD_CLIENT_ID)
     interval = float(cfg.get("interval", 5))
 
     rpc = Presence(discord_client_id)
@@ -129,12 +129,23 @@ def main() -> None:
     long_pause = False
     last_content_key: Optional[str] = None
 
+    # Helpers for nicer TTY output
+    def set_title(title: str) -> None:
+        try:
+            if os.name == 'nt':
+                os.system(f"title {title}")
+            else:
+                print(f"\33]0;{title}\a", end="", flush=True)
+        except Exception:
+            pass
+
     # Clear console on start and print header
     try:
         os.system('cls' if os.name == 'nt' else 'clear')
     except Exception:
         pass
     console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
+    set_title("Jellyfin RPC - Idle")
 
     # Initial small randomized delay to avoid stampeding herd when many clients start
     time.sleep(random.uniform(0, min(2.0, interval)))
@@ -157,6 +168,7 @@ def main() -> None:
             content_key = "idle"
             if content_key != last_content_key:
                 console.print("[dim]Idle[/dim]")
+                set_title("Jellyfin RPC - Idle")
                 last_content_key = content_key
             time.sleep(interval + random.uniform(0, 0.5 * max(0.1, interval)))
             continue
@@ -237,6 +249,7 @@ def main() -> None:
             console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
             if title_line:
                 console.print(f"[bold]{title_line}[/bold]")
+                set_title(f"{title_line}")
             if state_line:
                 for ln in str(state_line).split("\n"):
                     if ln:

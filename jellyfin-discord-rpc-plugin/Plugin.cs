@@ -24,18 +24,15 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 
     public IEnumerable<PluginPageInfo> GetPages()
     {
+        var htmlRes = GetType().Namespace + ".Configuration.config.html";
+        var jsRes = GetType().Namespace + ".Configuration.config.js";
         return new[]
         {
-            new PluginPageInfo
-            {
-                Name = "discordrpc",
-                EmbeddedResourcePath = GetType().Namespace + ".Configuration.config.html"
-            },
-            new PluginPageInfo
-            {
-                Name = "discordrpcjs",
-                EmbeddedResourcePath = GetType().Namespace + ".Configuration.config.js"
-            }
+            new PluginPageInfo { Name = "discordrpc", EmbeddedResourcePath = htmlRes },
+            new PluginPageInfo { Name = "discordrpc.html", EmbeddedResourcePath = htmlRes },
+            new PluginPageInfo { Name = "config.html", EmbeddedResourcePath = htmlRes },
+            new PluginPageInfo { Name = "discordrpc.js", EmbeddedResourcePath = jsRes },
+            new PluginPageInfo { Name = "config.js", EmbeddedResourcePath = jsRes }
         };
     }
 }
