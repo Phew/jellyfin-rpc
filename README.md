@@ -80,6 +80,7 @@ If idle:
 ```json
 { "active": false }
 ```
+![Example presence](https://files.catbox.moe/zyw0tf.png)
 
 ## CLI Behavior
 
