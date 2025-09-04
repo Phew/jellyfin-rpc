@@ -53,7 +53,7 @@ public class PresenceController : ControllerBase
 
         var title = item.Name ?? "";
         var seriesName = item.SeriesName ?? string.Empty;
-        var itemType = item.Type?.ToString() ?? string.Empty;
+        var itemType = item.Type.ToString();
         var genres = (item.Genres != null && item.Genres.Any()) ? string.Join(", ", item.Genres.Take(3)) : string.Empty;
         var seasonEpisode = item.IndexNumber.HasValue
             ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber:00}E{item.IndexNumber:00}" : $"E{item.IndexNumber:00}")
@@ -66,7 +66,7 @@ public class PresenceController : ControllerBase
 
         string ReplaceTokens(string template)
         {
-            var mediaType = item.MediaType?.ToString();
+            var mediaType = item.MediaType.ToString();
             var activity = string.Equals(mediaType, "Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching";
             return template
                 .Replace("{title}", title)
