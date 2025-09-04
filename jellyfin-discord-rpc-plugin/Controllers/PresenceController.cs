@@ -15,12 +15,10 @@ namespace Jellyfin.Plugin.DiscordRpc.Controllers;
 public class PresenceController : ControllerBase
 {
     private readonly ISessionManager _sessionManager;
-    private readonly IUserManager _userManager;
 
-    public PresenceController(ISessionManager sessionManager, IUserManager userManager)
+    public PresenceController(ISessionManager sessionManager)
     {
         _sessionManager = sessionManager;
-        _userManager = userManager;
     }
 
     [HttpGet("Presence")] // Auth via Jellyfin token header
