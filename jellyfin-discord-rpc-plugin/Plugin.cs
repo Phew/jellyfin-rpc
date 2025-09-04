@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
+using MediaBrowser.Model.Serialization;
 
 namespace Jellyfin.Plugin.DiscordRpc;
 
@@ -12,7 +13,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public const string PluginName = "Discord RPC";
     public static Plugin? Instance { get; private set; }
 
-    public Plugin(IApplicationPaths applicationPaths) : base(applicationPaths)
+    public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer) : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
     }

@@ -43,7 +43,7 @@ public class PresenceController : ControllerBase
         // Prefer actively playing over paused, then by last activity timestamp
         var session = candidates
             .OrderByDescending(s => (s.PlayState != null && s.PlayState.IsPaused == false) ? 1 : 0)
-            .ThenByDescending(s => s.LastActivityDate ?? DateTime.MinValue)
+            .ThenByDescending(s => s.LastActivityDate)
             .First();
 
         var item = session.NowPlayingItem;
@@ -63,15 +63,6 @@ public class PresenceController : ControllerBase
         var isPaused = playState?.IsPaused == true;
         var playStateText = isPaused ? "Paused" : "Playing";
 
-        // Compute time left string from endTimestamp if available and not paused
-        string timeLeft = string.Empty;
-        if (!isPaused && endTimestamp.HasValue)
-        {
-            var secondsLeft = (int)Math.Max(0, endTimestamp.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            var ts = TimeSpan.FromSeconds(secondsLeft);
-            timeLeft = ts.Hours > 0 ? $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} left" : $"{ts.Minutes:D2}:{ts.Seconds:D2} left";
-        }
-
         string ReplaceTokens(string template)
         {
             return template
@@ -81,8 +72,8 @@ public class PresenceController : ControllerBase
                 .Replace("{play_state}", playStateText)
                 .Replace("{genres}", genres)
                 .Replace("{series_name}", seriesName)
-                .Replace("{time_left}", timeLeft)
-                .Replace("{activity}", item.Type == "Episode" || item.Type == "Series" ? "Watching" : (item.MediaType == MediaType.Audio ? "Listening" : "Watching"));
+                .Replace("{time_left}", "")
+                .Replace("{activity}", item.Type == "Episode" || item.Type == "Series" ? "Watching" : (item.MediaType != null && item.MediaType.Equals("Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching"));
         }
 
         var details = ReplaceTokens(config.DetailsTemplate);
@@ -105,6 +96,19 @@ public class PresenceController : ControllerBase
                 endTimestamp = end.ToUnixTimeSeconds();
             }
         }
+
+        // Compute time left string from endTimestamp if available and not paused
+        string timeLeft = string.Empty;
+        if (!isPaused && endTimestamp.HasValue)
+        {
+            var secondsLeft = (int)Math.Max(0, endTimestamp.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            var ts = TimeSpan.FromSeconds(secondsLeft);
+            timeLeft = ts.Hours > 0 ? $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} left" : $"{ts.Minutes:D2}:{ts.Seconds:D2} left";
+        }
+
+        // Re-apply time_left into state and details
+        details = details.Replace("{time_left}", timeLeft);
+        state = state.Replace("{time_left}", timeLeft);
 
         // Resolve cover image relative path for Primary if available
         string? coverPath = null;
@@ -204,19 +208,7 @@ public class PresenceController : ControllerBase
         }
 
         // Fallback: search an active session by header token
-        var headerToken = Request.Headers["X-Emby-Token"].FirstOrDefault()
-                           ?? Request.Headers["X-MediaBrowser-Token"].FirstOrDefault()
-                           ?? ExtractBearerToken(Request.Headers["Authorization"].FirstOrDefault());
-        if (!string.IsNullOrEmpty(headerToken))
-        {
-            var session = _sessionManager.Sessions.FirstOrDefault(s =>
-                string.Equals((string?)s?.AccessToken, headerToken, StringComparison.Ordinal) ||
-                string.Equals((string?)s?.Token, headerToken, StringComparison.Ordinal));
-            if (session != null)
-            {
-                return session.UserId;
-            }
-        }
+        // No reliable token fallback in SessionInfo; require authenticated user context
 
         return Guid.Empty;
     }
