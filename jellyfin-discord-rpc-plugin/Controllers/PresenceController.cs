@@ -19,24 +19,26 @@ public class PresenceController : ControllerBase
     [HttpGet("Presence")] // Auth via Jellyfin token header
     public IActionResult GetPresence()
     {
-        var sessionManager = HttpContext.RequestServices.GetService(typeof(ISessionManager)) as ISessionManager;
-        if (sessionManager == null)
+        try
         {
-            return StatusCode(500, new { error = "SessionManager unavailable" });
-        }
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty)
-        {
-            return Unauthorized(new { error = "Unauthorized" });
-        }
+            var sessionManager = HttpContext.RequestServices.GetService(typeof(ISessionManager)) as ISessionManager;
+            if (sessionManager == null)
+            {
+                return StatusCode(500, new { error = "SessionManager unavailable" });
+            }
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { error = "Unauthorized" });
+            }
 
-        var sessions = sessionManager.Sessions.ToList();
-        var userSessions = sessions.Where(s => s.UserId == userId).ToList();
-        var candidates = userSessions.Where(s => s.NowPlayingItem != null).ToList();
-        if (candidates.Count == 0)
-        {
-            return Ok(new { active = false });
-        }
+            var sessions = sessionManager.Sessions.ToList();
+            var userSessions = sessions.Where(s => s.UserId == userId).ToList();
+            var candidates = userSessions.Where(s => s.NowPlayingItem != null).ToList();
+            if (candidates.Count == 0)
+            {
+                return Ok(new { active = false });
+            }
 
         // Prefer actively playing over paused, then by last activity timestamp
         var session = candidates
@@ -159,27 +161,32 @@ public class PresenceController : ControllerBase
         }
         catch { }
 
-        return Ok(new
+            return Ok(new
+            {
+                active = true,
+                details,
+                state,
+                large_image = largeImageKey,
+                large_text = largeText,
+                small_image = config.SmallImageKey,
+                small_text = smallText,
+                start_timestamp = startTimestamp,
+                end_timestamp = isPaused ? null : endTimestamp,
+                is_paused = isPaused,
+                user_id = userId,
+                item_id = item.Id,
+                item_type = itemType,
+                cover_image_path = coverPath,
+                links = new [] {
+                    imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
+                    tmdbUrl != null ? new { label = "TheMovieDb", url = tmdbUrl } : null
+                }.Where(x => x != null)
+            });
+        }
+        catch (Exception ex)
         {
-            active = true,
-            details,
-            state,
-            large_image = largeImageKey,
-            large_text = largeText,
-            small_image = config.SmallImageKey,
-            small_text = smallText,
-            start_timestamp = startTimestamp,
-            end_timestamp = isPaused ? null : endTimestamp,
-            is_paused = isPaused,
-            user_id = userId,
-            item_id = item.Id,
-            item_type = itemType,
-            cover_image_path = coverPath,
-            links = new [] {
-                imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
-                tmdbUrl != null ? new { label = "TheMovieDb", url = tmdbUrl } : null
-            }.Where(x => x != null)
-        });
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
 
     [HttpGet("Presence/Me")] // Convenience alias

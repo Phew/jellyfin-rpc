@@ -8,6 +8,9 @@ from typing import Optional, Tuple
 import requests
 from pypresence import Presence
 from rich.console import Console
+import socket
+import platform
+import uuid
 
 console = Console()
 
@@ -71,12 +74,27 @@ def load_config() -> dict:
 
 
 def get_presence(base_url: str, api_key: str) -> Optional[dict]:
+    device_name = socket.gethostname()
+    device_id = uuid.uuid5(uuid.NAMESPACE_DNS, device_name).hex
+    client_name = "Jellyfin-Discord-RPC-CLI"
+    client_version = "1.1"
+    os_name = platform.system()
     headers = {
         "X-Emby-Token": api_key,
+        "X-Emby-Client": client_name,
+        "X-Emby-Client-Version": client_version,
+        "X-Emby-Device-Name": device_name,
+        "X-Emby-Device-Id": device_id,
+        "X-Emby-OperatingSystem": os_name,
+        "X-Emby-Authorization": f"MediaBrowser Client=\"{client_name}\", Device=\"{device_name}\", DeviceId=\"{device_id}\", Version=\"{client_version}\", Token=\"{api_key}\"",
+        "Authorization": f"MediaBrowser Token=\"{api_key}\"",
         "Accept": "application/json",
-        "User-Agent": "Jellyfin-Discord-RPC-CLI/1.1"
+        "User-Agent": f"{client_name}/{client_version}"
     }
     url = base_url.rstrip("/") + "/Plugins/DiscordRpc/Presence/Me"
+    # Also append api_key as a query param for proxies that strip headers
+    sep = '&' if ('?' in url) else '?'
+    url = f"{url}{sep}api_key={api_key}"
     try:
         resp = requests.get(url, headers=headers, timeout=10)
         if resp.status_code == 401:
