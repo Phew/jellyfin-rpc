@@ -205,6 +205,7 @@ public class PresenceController : ControllerBase
                 user_id = userId,
                 item_id = item.Id,
                 item_type = itemType,
+                series_id = (item.SeriesId.HasValue ? item.SeriesId.Value : Guid.Empty),
                 cover_image_path = coverPath,
                 public_cover_url = publicCoverUrl,
                 links = new [] {
