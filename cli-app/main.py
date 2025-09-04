@@ -119,7 +119,7 @@ def load_config() -> dict:
     return cfg
 
 
-def get_presence(base_url: str, api_key: str) -> Optional[dict]:
+def get_presence(base_url: str, api_key: str, username: Optional[str] = None) -> Optional[dict]:
     device_name = socket.gethostname()
     device_id = uuid.uuid5(uuid.NAMESPACE_DNS, device_name).hex
     client_name = "Jellyfin-Discord-RPC-CLI"
@@ -138,11 +138,11 @@ def get_presence(base_url: str, api_key: str) -> Optional[dict]:
         "User-Agent": f"{client_name}/{client_version}"
     }
     url = base_url.rstrip("/") + "/Plugins/DiscordRpc/Presence/Me"
-    # Also append api_key as a query param for proxies that strip headers
-    sep = '&' if ('?' in url) else '?'
-    url = f"{url}{sep}api_key={api_key}"
+    params = {"api_key": api_key}
+    if username:
+        params["username"] = username
     try:
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
         if resp.status_code == 401:
             console.print("[red]Unauthorized: check your Jellyfin API key[/red]")
             logging.warning("Unauthorized (401) from Presence endpoint")
@@ -200,15 +200,17 @@ def main() -> None:
         os.system('cls' if os.name == 'nt' else 'clear')
     except Exception:
         pass
-    console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
-    set_title("Jellyfin RPC - Idle")
+    header = "Jellyfin Discord RPC" + (f" (user: {username})" if username else "")
+    console.print(f"[bold cyan]{header}[/bold cyan]")
+    set_title("Jellyfin RPC - Idle" + (f" (user: {username})" if username else ""))
     console.print("[green]Connected to Discord RPC[/green]")
+    logging.info(f"Username scope: {username or '(none)'}")
 
     # Initial small randomized delay to avoid stampeding herd when many clients start
     time.sleep(random.uniform(0, min(2.0, interval)))
 
     while True:
-        data = get_presence(jellyfin_url, api_key)
+        data = get_presence(jellyfin_url, api_key, username=username or None)
         if not data:
             time.sleep(interval + random.uniform(0, 0.5 * max(0.1, interval)))
             continue
@@ -319,7 +321,8 @@ def main() -> None:
             title_line = data.get("details") or ""
             state_line = data.get("state") or ""
             # Do not clear on change; just print a fresh section so logs remain visible
-            console.print("\n[bold cyan]Jellyfin Discord RPC[/bold cyan]")
+            header = "Jellyfin Discord RPC" + (f" (user: {username})" if username else "")
+            console.print(f"\n[bold cyan]{header}[/bold cyan]")
             logging.info(f"Now playing: {title_line} | {state_line}")
             if title_line:
                 console.print(f"[bold]{title_line}[/bold]")

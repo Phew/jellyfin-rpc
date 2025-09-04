@@ -73,6 +73,19 @@ python main.py
 
 If no config is found, the app writes an example to the roaming config path and exits with instructions.
 
+### Username scoping (multi-user servers)
+
+- Add your Jellyfin username to `cli-app/config.json`:
+
+```json
+{
+  "username": "your_jellyfin_username"
+}
+```
+
+- The CLI appends `username=...` to the presence endpoint, and the plugin filters sessions to that user, even with an admin API key.
+- The CLI header shows which user it’s scoped to (e.g., “Jellyfin Discord RPC (user: alice)”).
+
 ### Discord Application (Client ID)
 
 Create a Discord application and copy its Client ID. Put it into `cli-app/config.json` under `discord_client_id`. The application name becomes the bold title on the card (e.g., rename it to "Jellyfin").
