@@ -110,8 +110,10 @@ Override plugin directory via `JELLYFIN_PLUGIN_DIR` environment variable if auto
 
 ### Cover images via public URLs (best-effort)
 
-- The plugin returns both `cover_image_path` and a `public_cover_url` served anonymously via `/Plugins/DiscordRpc/Cover/{itemId}`.
-- The CLI prefers `public_cover_url` for the large image; if unavailable it falls back to `cover_image_path` (and can append the API token when enabled):
+- The plugin now sends direct Jellyfin image URLs for artwork (no external hosts):
+  - `https://your.server/Items/{Id}/Images/Primary?quality=90&fillHeight=512&fillWidth=512[&tag=...]`
+  - For TV episodes, the series poster is preferred.
+- The CLI uses this URL automatically when `Images.ENABLE_IMAGES` is true in config.
 
 ```json
 {
@@ -120,6 +122,13 @@ Override plugin directory via `JELLYFIN_PLUGIN_DIR` environment variable if auto
 ```
 
 Note: Official Discord clients may ignore URLs for Rich Presence images. If images don't appear, switch to pre-uploaded assets using the AssetKeyPrefix option in the plugin settings.
+
+### Logging
+
+- The CLI logs to console and to a file by default:
+  - Windows: `%APPDATA%\JellyfinDiscordRPC\rpc.log`
+  - macOS/Linux: `~/.config/jellyfin-discord-rpc/rpc.log`
+- It logs the exact image URL it attempts to use, and errors if updates fail.
 
 ### CLI UX niceties
 

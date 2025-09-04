@@ -14,6 +14,15 @@ import uuid
 import logging
 
 console = Console()
+class _OnlyThisFile(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            p = record.pathname.replace('\\', '/').lower()
+            return p.endswith('cli-app/main.py')
+        except Exception:
+            return True
+
+
 def _default_log_path() -> str:
     try:
         appdata = os.environ.get("APPDATA")
@@ -29,18 +38,33 @@ def _default_log_path() -> str:
 
 def setup_logging() -> None:
     level = logging.INFO
-    # Always configure console logger
-    logging.basicConfig(level=level, format='[%(levelname)s] %(message)s')
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(level)
 
-    # Always configure file logger to a default path unless already present
+    fmt_console = logging.Formatter('[%(levelname)s] %(message)s')
+    fmt_file = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+    flt = _OnlyThisFile()
+
+    sh = logging.StreamHandler()
+    sh.setLevel(level)
+    sh.setFormatter(fmt_console)
+    sh.addFilter(flt)
+    root.addHandler(sh)
+
     log_file = os.environ.get("LOG_FILE") or _default_log_path()
     try:
         fh = logging.FileHandler(log_file, encoding='utf-8')
         fh.setLevel(level)
-        fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
-        logging.getLogger().addHandler(fh)
+        fh.setFormatter(fmt_file)
+        fh.addFilter(flt)
+        root.addHandler(fh)
     except Exception:
         pass
+
+    # Quiet noisy libraries
+    logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 
 # No hardcoded client id; read from config or DISCORD_CLIENT_ID env
