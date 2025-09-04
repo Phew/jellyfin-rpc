@@ -17,7 +17,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public string AssetKeyPrefix { get; set; } = "cover_";
 
     // Image settings group
-    public ImagesConfig Images { get; set; } = new ImagesConfig();
+    public ImagesConfig Images { get; set; } = new ImagesConfig { ENABLE_IMAGES = true };
     public string DefaultImageAssetKey { get; set; } = "jellyfin";
 }
 

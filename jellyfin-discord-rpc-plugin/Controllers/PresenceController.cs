@@ -182,16 +182,12 @@ public class PresenceController : ControllerBase
         catch { }
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            string? publicCoverUrl = null;
-            if (config.Images != null && config.Images.ENABLE_IMAGES)
+            // Always provide a direct Jellyfin image URL (HTTPS required for official Discord)
+            var idForUrl = coverItemId != Guid.Empty ? coverItemId : item.Id;
+            string? publicCoverUrl = $"{baseUrl}/Items/{idForUrl}/Images/Primary?quality=90&fillHeight=512&fillWidth=512";
+            if (!string.IsNullOrEmpty(primaryTag))
             {
-                var idForUrl = coverItemId != Guid.Empty ? coverItemId : item.Id;
-                var url = $"{baseUrl}/Items/{idForUrl}/Images/Primary?quality=90&fillHeight=512&fillWidth=512";
-                if (!string.IsNullOrEmpty(primaryTag))
-                {
-                    url += $"&tag={WebUtility.UrlEncode(primaryTag)}";
-                }
-                publicCoverUrl = url;
+                publicCoverUrl += $"&tag={WebUtility.UrlEncode(primaryTag)}";
             }
 
             return Ok(new
