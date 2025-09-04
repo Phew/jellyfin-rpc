@@ -182,8 +182,12 @@ def main() -> None:
             long_pause = False
 
         # Prefer item cover thumbnail URL if provided by the plugin
+        # Prefer public URL if provided
+        public_url = data.get("public_cover_url")
         cover_path = data.get("cover_image_path")
-        if cover_path and cfg.get("jellyfin_url"):
+        if public_url:
+            payload["large_image"] = public_url
+        elif cover_path and cfg.get("jellyfin_url"):
             base = cfg.get("jellyfin_url").rstrip("/")
             url = base + "/" + cover_path.lstrip("/")
             if cfg.get("include_token_in_image_url") and api_key:

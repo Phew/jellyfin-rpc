@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace Jellyfin.Plugin.DiscordRpc.Controllers;
 
@@ -123,9 +124,9 @@ public class PresenceController : ControllerBase
 
         // Resolve cover image relative path for Primary if available
         string? coverPath = null;
+        string? primaryTag = null;
         try
         {
-            string? primaryTag = null;
             if (item.ImageTags != null && item.ImageTags.ContainsKey(ImageType.Primary))
             {
                 primaryTag = item.ImageTags[ImageType.Primary];
@@ -169,6 +170,13 @@ public class PresenceController : ControllerBase
         }
         catch { }
 
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var publicCoverUrl = item.Id != Guid.Empty
+                ? (string.IsNullOrEmpty(primaryTag)
+                    ? $"{baseUrl}/Plugins/DiscordRpc/Cover/{item.Id}"
+                    : $"{baseUrl}/Plugins/DiscordRpc/Cover/{item.Id}?tag={WebUtility.UrlEncode(primaryTag)}")
+                : null;
+
             return Ok(new
             {
                 active = true,
@@ -185,6 +193,7 @@ public class PresenceController : ControllerBase
                 item_id = item.Id,
                 item_type = itemType,
                 cover_image_path = coverPath,
+                public_cover_url = publicCoverUrl,
                 links = new [] {
                     imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
                     tmdbUrl != null ? new { label = "TheMovieDb", url = tmdbUrl } : null
