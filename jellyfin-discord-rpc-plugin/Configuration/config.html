@@ -48,6 +48,15 @@
                         <input is="emby-input" id="assetKeyPrefix" type="text" />
                         <div class="fieldDescription">Used when cover images are enabled: large image key = prefix + itemIdNoDashes</div>
                     </div>
+                    <h3>Images (Jellyfin URLs)</h3>
+                    <div class="inputContainer">
+                        <label><input id="enableImages" type="checkbox" /> Enable Jellyfin image URLs (HTTPS required)</label>
+                    </div>
+                    <div class="inputContainer">
+                        <label>Default Image Asset Key</label>
+                        <input is="emby-input" id="defaultImageAssetKey" type="text" />
+                        <div class="fieldDescription">Fallback asset name when an item has no artwork</div>
+                    </div>
                     <button is="emby-button" type="submit" class="raised button-submit block emby-button">Save</button>
                 </form>
             </div>

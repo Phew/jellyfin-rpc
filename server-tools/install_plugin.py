@@ -2,8 +2,12 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+import json
 from pathlib import Path
 from typing import List, Optional
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 
 
 def find_repo_root(start: Path) -> Path:
@@ -172,7 +176,77 @@ def main() -> None:
     print(f"Installed plugin to: {target}")
 
     try_restart_service()
+
+    # Optional: auto-configure plugin via Jellyfin API if env vars are present
+    jellyfin_url = os.environ.get("JELLYFIN_URL")
+    api_key = os.environ.get("JELLYFIN_API_KEY")
+
+    # Auto-discover from cli-app/config.json if env vars missing
+    if not jellyfin_url or not api_key:
+        cfg_path = find_repo_root(Path(__file__).parent) / "cli-app" / "config.json"
+        if cfg_path.exists():
+            try:
+                with cfg_path.open("r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    jellyfin_url = jellyfin_url or cfg.get("jellyfin_url")
+                    api_key = api_key or cfg.get("api_key")
+                    if jellyfin_url and api_key:
+                        print("Loaded Jellyfin URL and API key from cli-app/config.json")
+            except Exception:
+                pass
+
+    if jellyfin_url and api_key:
+        _post_config(jellyfin_url, api_key)
+    else:
+        print("Skipping config update (set env vars or cli-app/config.json)")
+
     print("Done.")
+
+
+def _wait_server(jellyfin_url: str, timeout: int = 60) -> bool:
+    end = time.time() + timeout
+    url = jellyfin_url.rstrip('/') + "/System/Info/Public"
+    while time.time() < end:
+        try:
+            with urlopen(url, timeout=5) as resp:
+                if resp.status == 200:
+                    return True
+        except Exception:
+            time.sleep(2)
+    return False
+
+
+def _post_config(jellyfin_url: str, api_key: str) -> None:
+    if not _wait_server(jellyfin_url, timeout=90):
+        print("Server did not come back online in time; skipping config push")
+        return
+
+    plugin_id = "7f1e77a0-6e64-4b3c-9a78-2f6f3e23f2f6"
+    cfg = {
+        "DetailsTemplate": "{series_or_title}",
+        "StateTemplate": "{genres} • {time_left}",
+        "LargeImageKey": "jellyfin",
+        "LargeImageTextTemplate": "Jellyfin",
+        "SmallImageKey": "play",
+        "SmallImageTextTemplate": "{play_state}",
+        "IncludeTimestamps": True,
+        "UseItemCoverAsLargeImage": False,
+        "AssetKeyPrefix": "cover_",
+        "DefaultImageAssetKey": "jellyfin",
+        "Images": {"ENABLE_IMAGES": True}
+    }
+
+    url = jellyfin_url.rstrip('/') + f"/Plugins/Configuration/{plugin_id}?api_key={api_key}"
+    body = json.dumps(cfg).encode('utf-8')
+    req = Request(url, data=body, method='POST')
+    req.add_header('Content-Type', 'application/json')
+    try:
+        with urlopen(req, timeout=10) as resp:
+            print(f"Updated plugin configuration: HTTP {resp.status}")
+    except HTTPError as e:
+        print(f"Failed to update config: HTTP {e.code}")
+    except URLError as e:
+        print(f"Failed to update config: {e}")
 
 
 if __name__ == "__main__":

@@ -14,6 +14,10 @@ define(["loading","emby-button","emby-input"], function() {
             page.querySelector('#includeTimestamps').checked = !!config.IncludeTimestamps;
             page.querySelector('#useItemCoverAsLargeImage').checked = !!config.UseItemCoverAsLargeImage;
             page.querySelector('#assetKeyPrefix').value = config.AssetKeyPrefix || '';
+            if (config.Images) {
+                page.querySelector('#enableImages').checked = !!config.Images.ENABLE_IMAGES;
+            }
+            page.querySelector('#defaultImageAssetKey').value = config.DefaultImageAssetKey || '';
         });
     }
 
@@ -28,6 +32,9 @@ define(["loading","emby-button","emby-input"], function() {
             config.IncludeTimestamps = page.querySelector('#includeTimestamps').checked;
             config.UseItemCoverAsLargeImage = page.querySelector('#useItemCoverAsLargeImage').checked;
             config.AssetKeyPrefix = page.querySelector('#assetKeyPrefix').value;
+            config.Images = config.Images || {};
+            config.Images.ENABLE_IMAGES = page.querySelector('#enableImages').checked;
+            config.DefaultImageAssetKey = page.querySelector('#defaultImageAssetKey').value;
             return ApiClient.updatePluginConfiguration(pluginId, config).then(function() {
                 Dashboard.processPluginConfigurationUpdateResult();
             });
