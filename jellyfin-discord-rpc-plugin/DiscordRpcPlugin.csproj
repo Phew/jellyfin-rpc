@@ -20,8 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Configuration\\config.html" />
-    <EmbeddedResource Include="Configuration\\config.js" />
+    <EmbeddedResource Include="Configuration\\config.html">
+      <LogicalName>Jellyfin.Plugin.DiscordRpc.Configuration.config.html</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Configuration\\config.js">
+      <LogicalName>Jellyfin.Plugin.DiscordRpc.Configuration.config.js</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
 
