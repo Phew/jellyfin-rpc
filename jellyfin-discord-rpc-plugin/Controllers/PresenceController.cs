@@ -7,6 +7,9 @@ using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Jellyfin.Plugin.DiscordRpc.Controllers;
 
@@ -17,14 +20,15 @@ public class PresenceController : ControllerBase
 {
 
     [HttpGet("Presence")] // Auth via Jellyfin token header
-    public IActionResult GetPresence()
+    public async Task<IActionResult> GetPresence()
     {
         try
         {
             var sessionManager = HttpContext.RequestServices.GetService(typeof(ISessionManager)) as ISessionManager;
             if (sessionManager == null)
             {
-                return StatusCode(500, new { error = "SessionManager unavailable" });
+                // Fallback: query server Sessions API via loopback
+                return await GetPresenceViaHttpAsync();
             }
             var userId = GetCurrentUserId();
             if (userId == Guid.Empty)
@@ -190,9 +194,9 @@ public class PresenceController : ControllerBase
     }
 
     [HttpGet("Presence/Me")] // Convenience alias
-    public IActionResult GetPresenceMe()
+    public async Task<IActionResult> GetPresenceMe()
     {
-        return GetPresence();
+        return await GetPresence();
     }
 
     [HttpGet("Ping")]
@@ -239,6 +243,105 @@ public class PresenceController : ControllerBase
             return authHeader.Substring("Bearer ".Length).Trim();
         }
         return null;
+    }
+
+    private async Task<IActionResult> GetPresenceViaHttpAsync()
+    {
+        try
+        {
+            var apiKey = Request.Headers["X-Emby-Token"].FirstOrDefault() ??
+                         Request.Query["api_key"].FirstOrDefault();
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return Unauthorized(new { error = "Missing token" });
+            }
+
+            // Build base URL from request
+            var scheme = Request.Scheme;
+            var host = Request.Host.Value;
+            var baseUrl = $"{scheme}://{host}";
+
+            using var http = new HttpClient();
+            http.Timeout = TimeSpan.FromSeconds(5);
+            http.DefaultRequestHeaders.Add("X-Emby-Token", apiKey);
+
+            // Get sessions and pick the first session for this token
+            var url = baseUrl + "/Sessions" + $"?api_key={apiKey}";
+            var resp = await http.GetAsync(url);
+            resp.EnsureSuccessStatusCode();
+            using var stream = await resp.Content.ReadAsStreamAsync();
+            using var doc = await JsonDocument.ParseAsync(stream);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0)
+            {
+                return Ok(new { active = false });
+            }
+
+            JsonElement? firstWithItem = null;
+            foreach (var el in root.EnumerateArray())
+            {
+                if (el.TryGetProperty("NowPlayingItem", out var npi) && npi.ValueKind != JsonValueKind.Null)
+                {
+                    firstWithItem = el;
+                    break;
+                }
+            }
+            if (firstWithItem == null)
+            {
+                return Ok(new { active = false });
+            }
+
+            var sessionEl = firstWithItem.Value;
+            var item = sessionEl.GetProperty("NowPlayingItem");
+            var play = sessionEl.GetProperty("PlayState");
+
+            string title = item.GetProperty("Name").GetString() ?? string.Empty;
+            string seriesName = item.TryGetProperty("SeriesName", out var sn) ? (sn.GetString() ?? string.Empty) : string.Empty;
+            int? index = item.TryGetProperty("IndexNumber", out var idx) && idx.TryGetInt32(out var iv) ? iv : (int?)null;
+            int? pindex = item.TryGetProperty("ParentIndexNumber", out var pix) && pix.TryGetInt32(out var piv) ? piv : (int?)null;
+            string seasonEpisode = index.HasValue ? (pindex.HasValue ? $"S{pindex:00}E{index:00}" : $"E{index:00}") : string.Empty;
+            long? posTicks = play.TryGetProperty("PositionTicks", out var pt) && pt.TryGetInt64(out var pl) ? pl : (long?)null;
+            long? runTicks = item.TryGetProperty("RunTimeTicks", out var rt) && rt.TryGetInt64(out var rl) ? rl : (long?)null;
+            bool isPaused = play.TryGetProperty("IsPaused", out var ip) && ip.ValueKind == JsonValueKind.True;
+            int progress = (posTicks.HasValue && runTicks.HasValue && runTicks.Value > 0) ? (int)Math.Round(100.0 * posTicks.Value / runTicks.Value) : 0;
+
+            long? startTs = null;
+            long? endTs = null;
+            if (posTicks.HasValue)
+            {
+                var position = TimeSpan.FromTicks(posTicks.Value);
+                startTs = (DateTimeOffset.UtcNow - position).ToUnixTimeSeconds();
+                if (runTicks.HasValue && runTicks.Value > 0)
+                {
+                    var remaining = TimeSpan.FromTicks(runTicks.Value) - position;
+                    endTs = (DateTimeOffset.UtcNow + remaining).ToUnixTimeSeconds();
+                }
+            }
+
+            string details = $"Watching: {title}";
+            string timeLeft = string.Empty;
+            if (!isPaused && endTs.HasValue)
+            {
+                var secondsLeft = Math.Max(0, endTs.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                var ts = TimeSpan.FromSeconds(secondsLeft);
+                timeLeft = ts.Hours > 0 ? $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} left" : $"{ts.Minutes:D2}:{ts.Seconds:D2} left";
+            }
+            string state = string.IsNullOrEmpty(seriesName) ? $"{seasonEpisode} {progress}% {timeLeft}".Trim() : $"{seriesName} {seasonEpisode} {timeLeft}".Trim();
+
+            return Ok(new
+            {
+                active = true,
+                details,
+                state,
+                start_timestamp = startTs,
+                end_timestamp = isPaused ? null : endTs,
+                is_paused = isPaused
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
 }
 
