@@ -147,7 +147,7 @@ def main() -> None:
         console.print(f"[red]Failed to connect to Discord RPC: {e}[/red]")
         raise SystemExit(1)
 
-    console.print("[green]Connected to Discord RPC[/green]")
+    # Moved the connected message after the initial clear/header to avoid wiping it
 
     last_payload = None
     paused_since: float | None = None
@@ -171,6 +171,7 @@ def main() -> None:
         pass
     console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
     set_title("Jellyfin RPC - Idle")
+    console.print("[green]Connected to Discord RPC[/green]")
 
     # Initial small randomized delay to avoid stampeding herd when many clients start
     time.sleep(random.uniform(0, min(2.0, interval)))
@@ -276,12 +277,9 @@ def main() -> None:
         if content_key != last_content_key:
             title_line = data.get("details") or ""
             state_line = data.get("state") or ""
-            # Clear screen for a fresh view
-            try:
-                os.system('cls' if os.name == 'nt' else 'clear')
-            except Exception:
-                pass
-            console.print("[bold cyan]Jellyfin Discord RPC[/bold cyan]")
+            # Do not clear on change; just print a fresh section so logs remain visible
+            console.print("\n[bold cyan]Jellyfin Discord RPC[/bold cyan]")
+            logging.info(f"Now playing: {title_line} | {state_line}")
             if title_line:
                 console.print(f"[bold]{title_line}[/bold]")
                 set_title(f"{title_line}")

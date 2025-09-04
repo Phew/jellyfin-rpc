@@ -31,8 +31,9 @@ public class CoverController : ControllerBase
                 return NotFound();
             }
             var contentType = resp.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
-            Response.Headers["Cache-Control"] = "public, max-age=300";
             var bytes = await resp.Content.ReadAsByteArrayAsync();
+            Response.Headers["Cache-Control"] = "public, max-age=300";
+            Response.Headers["Content-Disposition"] = "inline"; // ensure not downloaded as attachment
             return File(bytes, contentType);
         }
         catch
