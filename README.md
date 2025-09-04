@@ -1,9 +1,7 @@
-# Jellyfin Discord RPC Plugin + CLI
+# Jellyfin Discord RPC (Plugin + CLI)
 
-This project provides:
-
-- A Jellyfin plugin that exposes a secure endpoint returning a user-customizable Discord Rich Presence payload based on the current playback state.
-- A simple Python CLI that polls the plugin endpoint every few seconds and updates your Discord Rich Presence.
+- A Jellyfin plugin that exposes your now‑playing as a Discord Rich Presence payload
+- A small CLI that reads that payload and updates your Discord status every few seconds
 
 ## Plugin Features
 
@@ -36,19 +34,33 @@ If nothing is playing, the plugin returns:
 { "active": false }
 ```
 
-## Build and Install the Plugin
+## One-command install (recommended)
 
-1. Prereqs: .NET 8 SDK
-2. Build:
+1) Create/verify CLI config first (the installer reads it): see the CLI section below.
+
+2) Run the installer on your PC (it deploys to the server, restarts Jellyfin, and pushes config):
+
+```bash
+# Windows (PowerShell)
+python server-tools/install_plugin.py
+
+# Linux/macOS
+python3 server-tools/install_plugin.py
+```
+
+It auto-detects `jellyfin_url` and `api_key` from `cli-app/config.json`, or use env vars `JELLYFIN_URL` and `JELLYFIN_API_KEY`.
+
+## Manual plugin install (alternative)
+
+1) Prereq: .NET 8 SDK
+2) Build and copy:
 
 ```bash
 cd jellyfin-discord-rpc-plugin
 dotnet publish -c Release -o ./bin/Release/net8.0/publish
+# Copy publish/ to the server's Jellyfin plugins/DiscordRpc folder
 ```
-
-3. Copy the generated DLLs from `./bin/Release/net8.0/publish` into your Jellyfin `plugins` directory under a folder named `DiscordRpc` (create if needed), then restart Jellyfin.
-
-4. Configure in Jellyfin dashboard: Plugins → Discord RPC → set templates and save.
+3) Restart Jellyfin and hard‑refresh the dashboard
 
 ## CLI Usage (no parameters)
 
@@ -138,7 +150,7 @@ Note: Official Discord clients may ignore URLs for Rich Presence images. If imag
 
 ### Logging
 
-- The CLI logs to console and to a file by default:
+- The CLI logs to a file by default:
   - Windows: `%APPDATA%\JellyfinDiscordRPC\rpc.log`
   - macOS/Linux: `~/.config/jellyfin-discord-rpc/rpc.log`
 - It logs the exact image URL it attempts to use, and errors if updates fail.
