@@ -14,6 +14,23 @@ import uuid
 import logging
 
 console = Console()
+def setup_logging() -> None:
+    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=level, format='[%(levelname)s] %(message)s')
+    else:
+        logging.getLogger().setLevel(level)
+    log_file = os.environ.get("LOG_FILE")
+    if log_file:
+        try:
+            fh = logging.FileHandler(log_file, encoding='utf-8')
+            fh.setLevel(level)
+            fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+            logging.getLogger().addHandler(fh)
+        except Exception:
+            pass
+
 
 # No hardcoded client id; read from config or DISCORD_CLIENT_ID env
 
@@ -100,15 +117,18 @@ def get_presence(base_url: str, api_key: str) -> Optional[dict]:
         resp = requests.get(url, headers=headers, timeout=10)
         if resp.status_code == 401:
             console.print("[red]Unauthorized: check your Jellyfin API key[/red]")
+            logging.warning("Unauthorized (401) from Presence endpoint")
             return None
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
+        logging.error(f"Error fetching presence from {url}: {e}", exc_info=True)
         console.print(f"[red]Error fetching presence: {e}[/red]")
         return None
 
 
 def main() -> None:
+    setup_logging()
     cfg = load_config()
     jellyfin_url = cfg.get("jellyfin_url")
     api_key = cfg.get("api_key")
@@ -123,6 +143,7 @@ def main() -> None:
     try:
         rpc.connect()
     except Exception as e:
+        logging.error(f"Failed to connect to Discord RPC: {e}", exc_info=True)
         console.print(f"[red]Failed to connect to Discord RPC: {e}[/red]")
         raise SystemExit(1)
 
