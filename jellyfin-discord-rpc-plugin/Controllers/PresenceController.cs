@@ -194,7 +194,15 @@ public class PresenceController : ControllerBase
     [AllowAnonymous]
     public IActionResult Ping()
     {
-        return Ok(new { ok = true, plugin = Plugin.PluginName });
+        try
+        {
+            return Ok(new { ok = true, plugin = "Discord RPC" });
+        }
+        catch
+        {
+            // Always return a basic OK even if something unexpected happens
+            return Ok(new { ok = true });
+        }
     }
 
     private Guid GetCurrentUserId()
