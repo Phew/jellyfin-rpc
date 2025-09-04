@@ -74,7 +74,7 @@ public class PresenceController : ControllerBase
             var mediaType = item.MediaType.ToString();
             var activity = string.Equals(mediaType, "Audio", StringComparison.OrdinalIgnoreCase) ? "Listening" : "Watching";
             var seriesOrTitle = string.IsNullOrEmpty(seriesName) ? title : seriesName;
-            var episodeCodeTitle = string.IsNullOrEmpty(seriesName) ? title : ($"{seasonEpisode} {title}".Trim());
+            var episodeCodeTitle = title; // no code in simple layout
             return template
                 .Replace("{title}", title)
                 .Replace("{season_episode}", seasonEpisode)
