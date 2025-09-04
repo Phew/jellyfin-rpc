@@ -6,6 +6,7 @@ using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Jellyfin.Plugin.DiscordRpc.Controllers;
 
@@ -14,23 +15,22 @@ namespace Jellyfin.Plugin.DiscordRpc.Controllers;
 [Route("Plugins/DiscordRpc")] // GET /Plugins/DiscordRpc/Presence
 public class PresenceController : ControllerBase
 {
-    private readonly ISessionManager _sessionManager;
-
-    public PresenceController(ISessionManager sessionManager)
-    {
-        _sessionManager = sessionManager;
-    }
 
     [HttpGet("Presence")] // Auth via Jellyfin token header
     public IActionResult GetPresence()
     {
+        var sessionManager = HttpContext.RequestServices.GetService(typeof(ISessionManager)) as ISessionManager;
+        if (sessionManager == null)
+        {
+            return StatusCode(500, new { error = "SessionManager unavailable" });
+        }
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
         {
             return Unauthorized(new { error = "Unauthorized" });
         }
 
-        var sessions = _sessionManager.Sessions.ToList();
+        var sessions = sessionManager.Sessions.ToList();
         var userSessions = sessions.Where(s => s.UserId == userId).ToList();
         var candidates = userSessions.Where(s => s.NowPlayingItem != null).ToList();
         if (candidates.Count == 0)
