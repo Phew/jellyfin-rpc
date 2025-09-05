@@ -8,6 +8,19 @@ Display what you're watching on Jellyfin as Discord Rich Presence. Direct Jellyf
 - Python 3.10+ (for the CLI)
 - Discord Application (copy its Client ID; the app name is the bold title in Discord)
 
+## 🆕 New: Discord Selfbot Server Option
+
+**⚠️ Warning: Using Discord selfbots violates Discord's Terms of Service and may result in account suspension.**
+
+For users who want to run this entirely on a Linux server without local Discord, we now provide a Discord selfbot implementation:
+
+- **Enhanced Season/Episode Display**: Shows "Series S01E05" format for TV shows and anime
+- **Server-Only Operation**: No need to run Discord locally
+- **Improved Parsing**: Better handling of anime and TV show metadata
+- **RESTful API**: Clean server architecture
+
+See [SETUP_SELFBOT.md](SETUP_SELFBOT.md) for detailed setup instructions.
+
 ## Quick Start (one‑command install)
 
 1) Create the CLI config first (the installer reads this):
@@ -67,7 +80,7 @@ You’ll see: “Jellyfin Discord RPC (user: yourname)”. The RPC updates only 
 ```json
 {
   "active": true,
-  "details": "Doctor Who S1E1",
+  "details": "Doctor Who S01E01",
   "state": "Action, Drama, Mystery • 00:46:18 left",
   "start_timestamp": 1710000000,
   "end_timestamp": 1710000900,
@@ -75,6 +88,18 @@ You’ll see: “Jellyfin Discord RPC (user: yourname)”. The RPC updates only 
   "public_cover_url": "https://your.server/Items/<Id>/Images/Primary?quality=90&fillHeight=512&fillWidth=512&tag=..."
 }
 ```
+
+### Enhanced Season/Episode Display & Media Type Detection
+The plugin now properly detects and formats different media types:
+- **TV Episodes**: "Breaking Bad S03E07" with episode title in state: "One Minute" • Crime, Drama • 42:15 left
+- **Movies**: "The Matrix" with genres and time: Action, Sci-Fi • 1:32:45 left  
+- **Anime**: "Attack on Titan S04E16" with proper zero-padding and episode titles
+- **Music**: Artist and song information with appropriate formatting
+
+**Before**: All media showed the same format (series name or title only)
+**After**: Each media type has its own optimized display format
+
+See [MEDIA_TYPE_EXAMPLES.md](MEDIA_TYPE_EXAMPLES.md) for detailed examples and configuration options.
 
 If idle:
 ```json

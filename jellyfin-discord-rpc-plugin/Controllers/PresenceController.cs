@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using MediaBrowser.Controller.Library;
@@ -65,7 +66,7 @@ public class PresenceController : ControllerBase
         var itemType = item.Type.ToString();
         var genres = (item.Genres != null && item.Genres.Any()) ? string.Join(", ", item.Genres.Take(3)) : string.Empty;
         var seasonEpisode = item.IndexNumber.HasValue
-            ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber}E{item.IndexNumber}" : $"E{item.IndexNumber}")
+            ? (item.ParentIndexNumber.HasValue ? $"S{item.ParentIndexNumber:00}E{item.IndexNumber:00}" : $"E{item.IndexNumber:00}")
             : string.Empty;
         var progressPercent = playState?.PositionTicks.HasValue == true && item.RunTimeTicks.HasValue && item.RunTimeTicks.Value > 0
             ? (int)Math.Round(100.0 * playState.PositionTicks.Value / item.RunTimeTicks.Value)
@@ -93,8 +94,29 @@ public class PresenceController : ControllerBase
                 .Replace("{episode_code_title}", episodeCodeTitle);
         }
 
-        var details = ReplaceTokens(config.DetailsTemplate);
-        var state = ReplaceTokens(config.StateTemplate);
+        // Select appropriate template based on media type
+        string detailsTemplate, stateTemplate;
+        
+        if (itemType.Equals("Episode", StringComparison.OrdinalIgnoreCase))
+        {
+            detailsTemplate = config.Episodes.DetailsTemplate;
+            stateTemplate = config.Episodes.StateTemplate;
+        }
+        else if (itemType.Equals("Audio", StringComparison.OrdinalIgnoreCase) || 
+                 itemType.Equals("MusicAlbum", StringComparison.OrdinalIgnoreCase) ||
+                 itemType.Equals("MusicArtist", StringComparison.OrdinalIgnoreCase))
+        {
+            detailsTemplate = config.Music.DetailsTemplate;
+            stateTemplate = config.Music.StateTemplate;
+        }
+        else // Movies, Series, and other content
+        {
+            detailsTemplate = config.Movies.DetailsTemplate;
+            stateTemplate = config.Movies.StateTemplate;
+        }
+
+        var details = ReplaceTokens(detailsTemplate);
+        var state = ReplaceTokens(stateTemplate);
         var largeText = ReplaceTokens(config.LargeImageTextTemplate);
         var smallText = ReplaceTokens(config.SmallImageTextTemplate);
 
@@ -212,6 +234,18 @@ public class PresenceController : ControllerBase
                 series_id = (item.SeriesId.HasValue ? item.SeriesId.Value : Guid.Empty),
                 cover_image_path = coverPath,
                 public_cover_url = publicCoverUrl,
+                season_episode = seasonEpisode,
+                episode_title = title,
+                series_name = seriesName,
+                NowPlayingItem = new {
+                    Id = item.Id,
+                    Name = title,
+                    SeriesName = seriesName,
+                    Type = itemType,
+                    IndexNumber = item.IndexNumber,
+                    ParentIndexNumber = item.ParentIndexNumber,
+                    SeasonEpisode = seasonEpisode
+                },
                 links = new [] {
                     imdbUrl != null ? new { label = "IMDb", url = imdbUrl } : null,
                     tmdbUrl != null ? new { label = "TheMovieDb", url = tmdbUrl } : null
@@ -375,9 +409,15 @@ public class PresenceController : ControllerBase
                 }
             }
 
-            // Simple layout: title/series on top, then genres, then time left
-            string seriesOrTitle = string.IsNullOrEmpty(seriesName) ? title : seriesName;
-            string details = seriesOrTitle;
+            // Determine item type from JSON data
+            string itemTypeFromJson = "Movie"; // Default
+            if (item.TryGetProperty("Type", out var typeEl) && typeEl.ValueKind == JsonValueKind.String)
+            {
+                itemTypeFromJson = typeEl.GetString() ?? "Movie";
+            }
+
+            // Format details and state based on media type
+            string details, state;
             string timeLeft = string.Empty;
             if (!isPaused && endTs.HasValue)
             {
@@ -385,7 +425,30 @@ public class PresenceController : ControllerBase
                 var ts = TimeSpan.FromSeconds(secondsLeft);
                 timeLeft = ts.Hours > 0 ? $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2} left" : $"{ts.Minutes:D2}:{ts.Seconds:D2} left";
             }
-            string state = string.IsNullOrEmpty(genres) ? timeLeft : ($"{genres}\n{timeLeft}").Trim();
+
+            if (itemTypeFromJson.Equals("Episode", StringComparison.OrdinalIgnoreCase))
+            {
+                // TV Show Episode: "Series Name S01E05"
+                details = !string.IsNullOrEmpty(seriesName) && !string.IsNullOrEmpty(seasonEpisode) 
+                    ? $"{seriesName} {seasonEpisode}" 
+                    : (!string.IsNullOrEmpty(seriesName) ? seriesName : title);
+                // State: "Episode Title" • Genres • Time left
+                var episodeTitle = !string.IsNullOrEmpty(title) && title != seriesName ? $"\"{title}\"" : "";
+                var stateParts = new List<string>();
+                if (!string.IsNullOrEmpty(episodeTitle)) stateParts.Add(episodeTitle);
+                if (!string.IsNullOrEmpty(genres)) stateParts.Add(genres);
+                if (!string.IsNullOrEmpty(timeLeft)) stateParts.Add(timeLeft);
+                state = string.Join(" • ", stateParts);
+            }
+            else
+            {
+                // Movie or other content: Just the title
+                details = title;
+                var stateParts = new List<string>();
+                if (!string.IsNullOrEmpty(genres)) stateParts.Add(genres);
+                if (!string.IsNullOrEmpty(timeLeft)) stateParts.Add(timeLeft);
+                state = string.Join(" • ", stateParts);
+            }
 
             // Build image fields for fallback path
             string? imageId = null;
