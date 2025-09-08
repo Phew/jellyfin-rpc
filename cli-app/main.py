@@ -13,7 +13,31 @@ import platform
 import uuid
 import logging
 
-console = Console()
+console = Console(force_terminal=True, color_system="truecolor")
+
+_ASCII_FONT = {}
+
+def _divider() -> None:
+    console.print("[dim]────────────────────────────────────────────────────────────────────────[/dim]")
+
+def _clear_screen() -> None:
+    try:
+        os.system('cls' if os.name == 'nt' else 'clear')
+    except Exception:
+        pass
+
+def _draw_screen(title_text: str, state_text: str, username: str) -> None:
+    _clear_screen()
+    subtitle = "[bold cyan]theater.cx rpc[/bold cyan]" + (f" [dim]• user: {username}[/dim]" if username else "")
+    console.print(subtitle)
+    _divider()
+    if title_text:
+        console.print(f"[bold white]{title_text}[/bold white]")
+    if state_text:
+        for ln in str(state_text).split("\n"):
+            if ln:
+                console.print(f"[bright_black]{ln}[/bright_black]")
+
 class _OnlyThisFile(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         try:
@@ -122,7 +146,7 @@ def load_config() -> dict:
 def get_presence(base_url: str, api_key: str, username: Optional[str] = None) -> Optional[dict]:
     device_name = socket.gethostname()
     device_id = uuid.uuid5(uuid.NAMESPACE_DNS, device_name).hex
-    client_name = "Jellyfin-Discord-RPC-CLI"
+    client_name = "theater.cx-rpc-cli"
     client_version = "1.1"
     os_name = platform.system()
     headers = {
@@ -195,14 +219,9 @@ def main() -> None:
         except Exception:
             pass
 
-    # Clear console on start and print header
-    try:
-        os.system('cls' if os.name == 'nt' else 'clear')
-    except Exception:
-        pass
-    header = "Jellyfin Discord RPC" + (f" (user: {username})" if username else "")
-    console.print(f"[bold cyan]{header}[/bold cyan]")
-    set_title("Jellyfin RPC - Idle" + (f" (user: {username})" if username else ""))
+    # Initial screen
+    set_title("theater.cx rpc - Idle" + (f" (user: {username})" if username else ""))
+    _draw_screen("Idle", "", username)
     console.print("[green]Connected to Discord RPC[/green]")
     logging.info(f"Username scope: {username or '(none)'}")
 
@@ -234,8 +253,8 @@ def main() -> None:
             long_pause = False
             content_key = "idle"
             if content_key != last_content_key:
-                console.print("[dim]Idle[/dim]")
-                set_title("Jellyfin RPC - Idle")
+                _draw_screen("Idle", "", username)
+                set_title("theater.cx rpc - Idle")
                 last_content_key = content_key
             time.sleep(interval + random.uniform(0, 0.5 * max(0.1, interval)))
             continue
@@ -317,20 +336,12 @@ def main() -> None:
 
         # Show content change once
         content_key = str(data.get("item_id") or data.get("details") or "unknown")
+        title_line = data.get("details") or ""
+        state_line = data.get("state") or ""
         if content_key != last_content_key:
-            title_line = data.get("details") or ""
-            state_line = data.get("state") or ""
-            # Do not clear on change; just print a fresh section so logs remain visible
-            header = "Jellyfin Discord RPC" + (f" (user: {username})" if username else "")
-            console.print(f"\n[bold cyan]{header}[/bold cyan]")
             logging.info(f"Now playing: {title_line} | {state_line}")
-            if title_line:
-                console.print(f"[bold]{title_line}[/bold]")
-                set_title(f"{title_line}")
-            if state_line:
-                for ln in str(state_line).split("\n"):
-                    if ln:
-                        console.print(ln)
+            _draw_screen(title_line, state_line, username)
+            set_title(f"theater.cx rpc - {title_line}" if title_line else "theater.cx rpc")
             last_content_key = content_key
 
         if not long_pause and payload != last_payload:
@@ -341,6 +352,9 @@ def main() -> None:
                     logging.info("Updating RPC with no large_image (asset-only)")
                 rpc.update(**payload)
                 last_payload = payload
+                # Clear and redraw on every status update
+                _draw_screen(title_line, state_line, username)
+                set_title(f"theater.cx rpc - {title_line}" if title_line else "theater.cx rpc")
             except Exception as e:
                 logging.error(f"Failed to update Discord RPC: {e}")
                 console.print(f"[red]Failed to update RPC: {e}[/red]")
