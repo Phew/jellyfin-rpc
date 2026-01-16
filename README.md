@@ -8,19 +8,6 @@ Display what you're watching on Jellyfin as Discord Rich Presence. Direct Jellyf
 - Python 3.10+ (for the CLI)
 - Discord Application (copy its Client ID; the app name is the bold title in Discord)
 
-## 🆕 New: Discord Selfbot Server Option
-
-**⚠️ Warning: Using Discord selfbots violates Discord's Terms of Service and may result in account suspension.**
-
-For users who want to run this entirely on a Linux server without local Discord, we now provide a Discord selfbot implementation:
-
-- **Enhanced Season/Episode Display**: Shows "Series S01E05" format for TV shows and anime
-- **Server-Only Operation**: No need to run Discord locally
-- **Improved Parsing**: Better handling of anime and TV show metadata
-- **RESTful API**: Clean server architecture
-
-See [SETUP_SELFBOT.md](SETUP_SELFBOT.md) for detailed setup instructions.
-
 ## Quick Start (one‑command install)
 
 1) Create the CLI config first (the installer reads this):
