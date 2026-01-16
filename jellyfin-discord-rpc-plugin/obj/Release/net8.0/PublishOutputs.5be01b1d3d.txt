@@ -1,0 +1,16 @@
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Jellyfin.Plugin.DiscordRpc.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Jellyfin.Plugin.DiscordRpc.deps.json
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Jellyfin.Plugin.DiscordRpc.pdb
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Diacritics.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\ICU4N.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\ICU4N.Transliterator.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\J2N.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\MediaBrowser.Common.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\MediaBrowser.Controller.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Jellyfin.Data.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Jellyfin.Extensions.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\MediaBrowser.Model.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Emby.Naming.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Microsoft.Extensions.Configuration.Binder.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\installer_publish\Microsoft.Extensions.Logging.Abstractions.dll

@@ -1,0 +1,16 @@
+C:\projects\jellyfin-rpc-main\bin\publish\Jellyfin.Plugin.DiscordRpc.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Jellyfin.Plugin.DiscordRpc.deps.json
+C:\projects\jellyfin-rpc-main\bin\publish\Jellyfin.Plugin.DiscordRpc.pdb
+C:\projects\jellyfin-rpc-main\bin\publish\Diacritics.dll
+C:\projects\jellyfin-rpc-main\bin\publish\ICU4N.dll
+C:\projects\jellyfin-rpc-main\bin\publish\ICU4N.Transliterator.dll
+C:\projects\jellyfin-rpc-main\bin\publish\J2N.dll
+C:\projects\jellyfin-rpc-main\bin\publish\MediaBrowser.Common.dll
+C:\projects\jellyfin-rpc-main\bin\publish\MediaBrowser.Controller.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Jellyfin.Data.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Jellyfin.Extensions.dll
+C:\projects\jellyfin-rpc-main\bin\publish\MediaBrowser.Model.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Emby.Naming.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Microsoft.Extensions.Configuration.Binder.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\projects\jellyfin-rpc-main\bin\publish\Microsoft.Extensions.Logging.Abstractions.dll

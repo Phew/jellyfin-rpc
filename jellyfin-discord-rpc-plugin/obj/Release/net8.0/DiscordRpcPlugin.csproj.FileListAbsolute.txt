@@ -1,0 +1,12 @@
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\Release\net8.0\Jellyfin.Plugin.DiscordRpc.deps.json
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\Release\net8.0\Jellyfin.Plugin.DiscordRpc.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\bin\Release\net8.0\Jellyfin.Plugin.DiscordRpc.pdb
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\DiscordRpcPlugin.csproj.AssemblyReference.cache
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\DiscordRpcPlugin.GeneratedMSBuildEditorConfig.editorconfig
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\DiscordRpcPlugin.AssemblyInfoInputs.cache
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\DiscordRpcPlugin.AssemblyInfo.cs
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\DiscordRpcPlugin.csproj.CoreCompileInputs.cache
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\Jellyfin.Plugin.DiscordRpc.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\refint\Jellyfin.Plugin.DiscordRpc.dll
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\Jellyfin.Plugin.DiscordRpc.pdb
+C:\projects\jellyfin-rpc-main\jellyfin-discord-rpc-plugin\obj\Release\net8.0\ref\Jellyfin.Plugin.DiscordRpc.dll
